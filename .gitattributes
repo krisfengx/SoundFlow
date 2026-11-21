@@ -1,0 +1,32 @@
+# Normalize all text files to LF in the repository and on checkout.
+# See setup/README.md for the environment layout contract.
+* text=auto eol=lf
+
+# Windows shell scripts and installer definitions need CRLF to run correctly.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.iss text eol=crlf
+
+# Binary assets must never be line-ending converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.icns binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.7z binary
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.rlib binary
+*.rmeta binary
+*.pyc binary
+*.wasm binary

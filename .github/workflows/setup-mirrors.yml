@@ -1,0 +1,78 @@
+name: Setup distribution mirrors
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  create-datasets:
+    name: Create HF and ModelScope dataset repositories
+    runs-on: ubuntu-latest
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      MODELSCOPE_API_TOKEN: ${{ secrets.MODELSCOPE_API_TOKEN }}
+      HF_REPO: fengjay01/SoundFlow-Dist
+      MS_REPO: fengjay01/SoundFlow-Dist
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Create Hugging Face dataset repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet "huggingface_hub>=0.26"
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi, whoami
+
+          token = os.environ["HF_TOKEN"]
+          if not token:
+              raise SystemExit("HF_TOKEN is empty")
+          user = whoami(token=token)["name"]
+          repo = os.environ["HF_REPO"]
+          owner = repo.split("/", 1)[0]
+          print(f"HF token belongs to: {user}; target repo owner: {owner}")
+          if owner != user:
+              raise SystemExit(
+                  f"HF_TOKEN account ({user}) does not match target owner ({owner}). "
+                  "Set HF_REPO to the token owner's namespace or use a token with write access to that namespace."
+              )
+          api = HfApi(token=token)
+          url = api.create_repo(repo_id=repo, repo_type="dataset", private=False, exist_ok=True)
+          api.upload_file(
+              path_or_fileobj=b"# SoundFlow distribution mirror\n\nComplete release packages for SoundFlow. See GitHub Releases for version notes.\n",
+              path_in_repo="README.md",
+              repo_id=repo,
+              repo_type="dataset",
+              commit_message="Initialize SoundFlow distribution mirror",
+          )
+          print(f"Hugging Face dataset ready: {url}")
+          PY
+
+      - name: Create ModelScope dataset repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet "modelscope>=1.18"
+          tmpdir="$(mktemp -d)"
+          printf '# SoundFlow distribution mirror\n\nComplete release packages for SoundFlow. See GitHub Releases for version notes.\n' > "$tmpdir/README.md"
+          modelscope upload "$MS_REPO" "$tmpdir/README.md" README.md \
+            --repo-type dataset \
+            --token "$MODELSCOPE_API_TOKEN" \
+            --commit-message "Initialize SoundFlow distribution mirror"
+          echo "ModelScope dataset ready: https://www.modelscope.cn/datasets/$MS_REPO"
+
+      - name: Verify both datasets are reachable
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            "https://huggingface.co/api/datasets/$HF_REPO" >/dev/null
+          echo "Hugging Face dataset verified: $HF_REPO"
+          curl --fail --silent --show-error --location \
+            "https://www.modelscope.cn/api/v1/datasets/$MS_REPO" >/dev/null
+          echo "ModelScope dataset verified: $MS_REPO"
