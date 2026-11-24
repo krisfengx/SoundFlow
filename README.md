@@ -328,6 +328,16 @@ The root defaults to `settings/`, `models/`, `outputs/`, `editor-projects/`, `lo
 
 **Editor projects reference audio files by path.** Back up the associated audio as well as the project. Relink missing assets in the editor after moving or deleting original outputs. Use the application's migration workflow when changing the model directory.
 
+### Configurable directories and migration
+
+In **Settings → Data Directory**, five locations can be inspected and changed: the data root, the separation model directory, the default output directory, the runtime directory, and the **model cache directory** (default `<data root>/models/_cache/`, where Hugging Face, torch.hub, and ModelScope weight caches are stored).
+
+Three of these migrate existing content into a target directory that must be empty: **Change data directory** moves settings, models, outputs, and projects while logs and temporary files stay in the old root, and takes effect on the next launch; **Change model cache directory** moves the `hf/`, `torch/`, and `modelscope/` subdirectories together; **Change Env Directory** moves installed environments and repairs their venv paths. **Change Model Directory** uses a separate guided copy → switch → clean-up migration with conflict resolution. **Change Output Directory** only selects where new results go; existing outputs are not moved. Migrations are unavailable while tasks or another migration are running.
+
+### Window close behavior and system tray
+
+In **Settings → Default Parameters**, **Window close behavior** selects what the window's close button does: **Ask every time** (default), **Minimize to tray**, or **Quit application**. The ask dialog offers minimize-to-tray and quit, plus a don't-ask-again option that remembers the choice. While minimized, clicking the system-tray icon shows or hides the window, and the tray menu offers show and quit. Quitting from the tray restores the window first so running-task guards can finish before the application exits and stops its Python worker.
+
 ### Updates and environment management
 
 Open **Settings → About** for version and update information. Windows and macOS builds whose release channel supports in-app updates can check and install updates there. Use the release page for builds without automatic update support. On macOS, an application update replaces the entire `.app`, preserving user data; administrator authorization is requested if write permissions are insufficient. Move the app to `/Applications` before updating: updates are blocked from a read-only DMG or App Translocation location. A change to the fixed base runtime contract requires a manual installation. The **Related links** section is grouped by source: this project (SoundFlow repository and issue tracker), the upstream project (upstream desktop app and pymss core repositories), and the desktop/core AGPL-3.0 licenses.
