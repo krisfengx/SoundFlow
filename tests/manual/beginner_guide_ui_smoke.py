@@ -18,7 +18,7 @@ with sync_playwright() as playwright:
         page = browser.new_page(viewport={'width': 1280, 'height': 850})
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
-        page.add_init_script('''localStorage.setItem('pymss-studio:app-settings', JSON.stringify({
+        page.add_init_script('''localStorage.setItem('soundflow:app-settings', JSON.stringify({
           startupOnboardingSeen:true,locale:'zh-CN',themeMode:'dark',animationsEnabled:false,
           beginnerGuideProgress:{status:''' + repr(status) + ''',step:0}
         }));''')

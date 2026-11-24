@@ -50,7 +50,7 @@ const {
 } = storeToRefs(settings)
 
 const step = ref(0)
-const projectRepositoryUrl = 'https://github.com/pymss-project/pymss-studio'
+const projectRepositoryUrl = 'https://github.com/krisfengx/SoundFlow'
 const checkingModelDir = ref(false)
 const overlayRef = ref<HTMLElement | null>(null)
 const runtimeChecking = ref(false)

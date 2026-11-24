@@ -1,6 +1,6 @@
 """Small metadata requests using the application's existing proxy and source rules.
 
-Adapted from upstream pymss-studio. Deliberately tiny: two 1 KiB reads, no model
+Adapted from upstream soundflow. Deliberately tiny: two 1 KiB reads, no model
 weights, no runtime mutations. Used by the Debug page to tell "model source down"
 apart from "PyPI mirror unreachable" and "proxy misconfigured".
 """

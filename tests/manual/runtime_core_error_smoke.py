@@ -23,7 +23,7 @@ def main():
             page = browser.new_page(viewport={"width": 1420, "height": 960})
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
-            page.add_init_script("""localStorage.setItem('pymss-studio:app-settings', JSON.stringify({
+            page.add_init_script("""localStorage.setItem('soundflow:app-settings', JSON.stringify({
               startupOnboardingSeen:true,beginnerGuideInvitationSeen:true,locale:'zh-CN',
               themeMode:'light',animationsEnabled:false
             }))""")

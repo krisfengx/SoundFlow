@@ -1,7 +1,7 @@
 """Run every advanced-workflow palette node against the installed pymss runtime.
 
 This is a manual integration smoke test. Run it with the Python interpreter from a
-prepared Pymss Studio runtime so codec, scipy and graph capabilities are available.
+prepared SoundFlow runtime so codec, scipy and graph capabilities are available.
 Separation nodes use a deterministic fake separator; one real-model workflow should
 be run separately after this fast contract test passes.
 """

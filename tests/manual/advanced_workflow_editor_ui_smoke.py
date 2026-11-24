@@ -21,7 +21,7 @@ with sync_playwright() as playwright:
     errors = []
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.add_init_script('''
-      if (!localStorage.getItem('pymss-studio:app-settings')) localStorage.setItem('pymss-studio:app-settings',
+      if (!localStorage.getItem('soundflow:app-settings')) localStorage.setItem('soundflow:app-settings',
         JSON.stringify({startupOnboardingSeen:true,locale:'zh-CN',themeMode:'light',outputDir:'D:/outputs'}));
     ''')
     page.goto(args.url + '/#/workflow-node-editor?new=1')
@@ -40,10 +40,10 @@ with sync_playwright() as playwright:
       graph.nodes.find(n=>n.type==='pymss_save_audio').widgets.find(w=>w.name==='output_format').value='flac';
       graph.afterChange();
     }''')
-    page.wait_for_function("JSON.parse(localStorage.getItem('pymss-studio:workflow-state') || '{}').workflows?.[0]?.definition.nodes.some(n=>n.type==='pymss_save_audio' && n.widgets_values[0]==='flac')")
+    page.wait_for_function("JSON.parse(localStorage.getItem('soundflow:workflow-state') || '{}').workflows?.[0]?.definition.nodes.some(n=>n.type==='pymss_save_audio' && n.widgets_values[0]==='flac')")
     expect(page.locator('.workflow-save-status')).to_have_text(copy['workflows']['autoSaveSaved'])
     expect(page.locator('.n-message')).to_have_count(0)
-    saved = page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows[0]")
+    saved = page.evaluate("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows[0]")
     assert next(n for n in saved['definition']['nodes'] if n['type'] == 'mss_separate')['widgets_values'][1] == 'cpu'
     assert next(n for n in saved['definition']['nodes'] if n['type'] == 'pymss_save_audio')['widgets_values'][0] == 'flac'
     canvas.evaluate('el=>{window.__savedCanvas=el.data;window.__savedGraph=el.data.graph}')
@@ -57,7 +57,7 @@ with sync_playwright() as playwright:
     page.mouse.down()
     page.mouse.move(x + 35, y + 20, steps=4)
     page.mouse.up()
-    page.wait_for_function('''original => JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows[0]
+    page.wait_for_function('''original => JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows[0]
       .definition.nodes.find(node=>node.id===original.id).pos[0] !== original.x''', arg=position)
     expect(page.locator('.workflow-save-status')).to_have_text(copy['workflows']['autoSaveSaved'])
     undo = toolbar.get_by_role('button', name=copy['common']['undo'], exact=True)
@@ -78,7 +78,7 @@ with sync_playwright() as playwright:
     expect(output_path).to_have_value('D:/outputs')
     expect(default_output).to_be_disabled()
     expect(output_modal.locator('.binding-layout')).to_have_count(0)
-    original_definition = page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows[0].definition")
+    original_definition = page.evaluate("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows[0].definition")
     page.evaluate('''() => {
       const settings=document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('settings');
       window.__outputSelection='E:/WorkflowOutput';
@@ -97,7 +97,7 @@ with sync_playwright() as playwright:
     page.evaluate("window.__outputSelection='E:/WorkflowOutput'")
     choose_output.click()
     expect(output_path).to_have_value('E:/WorkflowOutput')
-    assert page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows[0].definition") == original_definition
+    assert page.evaluate("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows[0].definition") == original_definition
     page.screenshot(path=str(args.output_dir / 'output-settings-light.png'), animations='disabled')
     output_modal.get_by_role('button', name=copy['common']['close'], exact=True).click()
 
@@ -138,9 +138,9 @@ with sync_playwright() as playwright:
     canvas.focus()
     page.keyboard.press('Control+s')
     expect(page.locator('.workflow-save-status')).to_have_text(copy['workflows']['autoSaveSaved'])
-    page.wait_for_function("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows[0].name==='Vocal processing'")
+    page.wait_for_function("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows[0].name==='Vocal processing'")
     assert canvas.evaluate('el=>el.data===window.__savedCanvas && el.data.graph===window.__savedGraph')
-    entries = page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows")
+    entries = page.evaluate("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows")
     assert len(entries) == 1 and entries[0]['id'] == saved['id']
     graph_before_run = canvas.evaluate('el=>JSON.stringify(el.data.graph.serialize())')
     def outline_pixel(node_type):
@@ -223,25 +223,25 @@ with sync_playwright() as playwright:
     page.evaluate('''() => {
       window.__setItem=Storage.prototype.setItem;
       Storage.prototype.setItem=function(key,value) {
-        if(key==='pymss-studio:workflow-state') throw new Error('Storage unavailable');
+        if(key==='soundflow:workflow-state') throw new Error('Storage unavailable');
         return window.__setItem.call(this,key,value);
       };
     }''')
     rename_workflow('Updated workflow')
     retry = page.get_by_role('button', name=copy['workflows']['autoSaveFailed'] + ' · ' + copy['common']['retry'], exact=True)
     expect(retry).to_be_visible()
-    assert page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows[0].name") == 'Vocal processing'
+    assert page.evaluate("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows[0].name") == 'Vocal processing'
     assert canvas.evaluate('el=>el.data.graph===window.__savedGraph')
     page.evaluate('() => { Storage.prototype.setItem=window.__setItem }')
     retry.click()
-    page.wait_for_function("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows[0].name==='Updated workflow'")
+    page.wait_for_function("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows[0].name==='Updated workflow'")
     expect(page.locator('.workflow-save-status')).to_have_text(copy['workflows']['autoSaveSaved'])
 
     # Leaving immediately flushes a pending edit instead of dropping the debounce.
     rename_workflow('Final workflow')
     page.evaluate("document.querySelector('#app').__vue_app__.config.globalProperties.$router.push('/workflows')")
     page.wait_for_url('**/#/workflows')
-    assert page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows[0].name") == 'Final workflow'
+    assert page.evaluate("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows[0].name") == 'Final workflow'
     assert not errors, errors
     page.evaluate("id=>document.querySelector('#app').__vue_app__.config.globalProperties.$router.push('/workflow-node-editor?workflowId='+id)", saved['id'])
     expect(canvas).to_be_visible()
@@ -258,7 +258,7 @@ with sync_playwright() as playwright:
         case_context = browser.new_context(viewport={'width': 1100, 'height': 800})
         fixtures = {'workflow-state': {'workflows': [entry], 'selectedWorkflowId': entry['id']},
                     'app-settings': {'startupOnboardingSeen': True, 'locale': 'zh-CN'}}
-        case_context.add_init_script('for(const [key,value] of Object.entries('+json.dumps(fixtures)+')) localStorage.setItem("pymss-studio:"+key,JSON.stringify(value));')
+        case_context.add_init_script('for(const [key,value] of Object.entries('+json.dumps(fixtures)+')) localStorage.setItem("soundflow:"+key,JSON.stringify(value));')
         page = case_context.new_page()
         canvas = page.locator('canvas.lg-canvas')
         page.goto(args.url + '/#/workflow-node-editor?workflowId=' + kind)
@@ -269,12 +269,12 @@ with sync_playwright() as playwright:
         assert canvas.evaluate('el=>el.data.graph.nodes.length') == len(nodes)
         if kind == 'unknown':
             assert canvas.evaluate('el=>el.data.graph.nodes[0].type') == 'unavailable_node'
-        actual = page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows[0]")
+        actual = page.evaluate("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows[0]")
         assert actual == entry, (kind, actual)
         case_context.close()
     # A restoration exception must surface in the UI without replacing the input graph.
     failure_context = browser.new_context(viewport={'width': 1100, 'height': 800})
-    failure_context.add_init_script('localStorage.setItem("pymss-studio:app-settings",JSON.stringify({startupOnboardingSeen:true,locale:"zh-CN"}))')
+    failure_context.add_init_script('localStorage.setItem("soundflow:app-settings",JSON.stringify({startupOnboardingSeen:true,locale:"zh-CN"}))')
     page = failure_context.new_page()
     page.goto(args.url + '/#/workflow-node-editor?new=1')
     page.wait_for_load_state('networkidle')

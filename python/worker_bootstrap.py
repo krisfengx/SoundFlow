@@ -39,10 +39,10 @@ def _default_runtime_envs_dir() -> Path:
     return project_local_or(executable.parent / "runtime-envs")
 
 
-RUNTIME_ENVS_DIR = Path(os.environ.get("PYMSS_STUDIO_RUNTIME_ENVS_DIR") or _default_runtime_envs_dir())
-ACTIVE_RUNTIME_FILE = Path(os.environ.get("PYMSS_STUDIO_ACTIVE_RUNTIME_FILE") or RUNTIME_ENVS_DIR / "active-runtime.json")
-BUNDLED_RUNTIME_ENVS_DIR = Path(os.environ["PYMSS_STUDIO_BUNDLED_RUNTIME_ENVS_DIR"]) if os.environ.get("PYMSS_STUDIO_BUNDLED_RUNTIME_ENVS_DIR") else None
-ALLOW_DEBUG_RUNTIME_OVERRIDE = os.environ.get("PYMSS_STUDIO_ALLOW_DEBUG_RUNTIME_OVERRIDE") == "1"
+RUNTIME_ENVS_DIR = Path(os.environ.get("SOUNDFLOW_RUNTIME_ENVS_DIR") or _default_runtime_envs_dir())
+ACTIVE_RUNTIME_FILE = Path(os.environ.get("SOUNDFLOW_ACTIVE_RUNTIME_FILE") or RUNTIME_ENVS_DIR / "active-runtime.json")
+BUNDLED_RUNTIME_ENVS_DIR = Path(os.environ["SOUNDFLOW_BUNDLED_RUNTIME_ENVS_DIR"]) if os.environ.get("SOUNDFLOW_BUNDLED_RUNTIME_ENVS_DIR") else None
+ALLOW_DEBUG_RUNTIME_OVERRIDE = os.environ.get("SOUNDFLOW_ALLOW_DEBUG_RUNTIME_OVERRIDE") == "1"
 
 # Distribution name -> import name, for the manifest packages whose two names differ.
 # Availability is decided with importlib, so an unmapped dashed name can never be found and the
@@ -79,7 +79,7 @@ def _configured_bootstrap_health() -> tuple[str | None, bool | None]:
     missing file; without this field the failure only shows up as an opaque `os error 3`.
     A bare command name (``python``) is resolved through PATH, so it has no file to check.
     """
-    configured = (os.environ.get("PYMSS_STUDIO_PYTHON") or "").strip() or None
+    configured = (os.environ.get("SOUNDFLOW_PYTHON") or "").strip() or None
     if not configured:
         return None, None
     if not (os.path.isabs(configured) or "/" in configured or "\\" in configured):
@@ -409,7 +409,7 @@ def _recover_runtime_transactions() -> None:
 
 
 def _bootstrap_python_path() -> Path:
-    python_path = Path(os.environ.get("PYMSS_STUDIO_BOOTSTRAP_PYTHON") or sys.executable)
+    python_path = Path(os.environ.get("SOUNDFLOW_BOOTSTRAP_PYTHON") or sys.executable)
     return python_path if python_path.is_file() else Path(sys.executable)
 
 
@@ -429,6 +429,39 @@ PYPI_MIRROR_URLS = {
 def _resolve_pypi_mirror(mirror: str, locale: str) -> tuple[str, str | None]:
     selected = "ustc" if mirror == "auto" and locale.startswith("zh") else "pypi" if mirror == "auto" else mirror
     return selected, PYPI_MIRROR_URLS.get(selected)
+
+
+# PyTorch publishes CPU/CUDA wheels in separate simple indexes. Only mirrors
+# that actually carry those wheels belong here; AMD's ROCm wheels stay on the
+# vendor repositories because no domestic mirror carries those versions.
+PYTORCH_MIRROR_ROOTS = {
+    "sjtu": "https://mirror.sjtu.edu.cn/pytorch-wheels",
+    "aliyun": "https://mirrors.aliyun.com/pytorch-wheels",
+}
+PYTORCH_MIRROR_VARIANTS = {"cpu", "cu118", "cu121", "cu124", "cu126", "cu128"}
+
+
+def _torch_index_variant(index_url: str | None) -> str | None:
+    if not index_url or "download.pytorch.org/whl/" not in index_url:
+        return None
+    variant = index_url.rstrip("/").rsplit("/", 1)[-1]
+    return variant if variant in PYTORCH_MIRROR_VARIANTS else None
+
+
+def _resolve_torch_index(index_url: str | None, torch_source: str) -> tuple[str | None, str | None]:
+    """Return (index-url override, find-links) for the torch install stage.
+
+    SJTU mirrors the real PEP 503 simple index, so it can replace --index-url.
+    Aliyun only publishes a flat wheel listing, which pip consumes via -f.
+    """
+    variant = _torch_index_variant(index_url)
+    source = str(torch_source or "official").strip().lower()
+    if not variant or source == "official" or source not in PYTORCH_MIRROR_ROOTS:
+        return index_url, None
+    root = PYTORCH_MIRROR_ROOTS[source]
+    if source == "sjtu":
+        return f"{root}/{variant}/", None
+    return None, f"{root}/{variant}/"
 
 
 def _backend_extra_names(manifest: dict[str, Any], backend: str | None) -> list[str]:
@@ -2217,6 +2250,164 @@ def _make_posix_venv_relocatable(env_dir: Path) -> bool:
     return changed
 
 
+def _rewrite_runtime_launchers(env_dir: Path, new_python: Path) -> int:
+    """Rewrite distlib console-script shebangs after a venv moved directory."""
+    if os.name != "nt":
+        return 0
+    scripts = env_dir / "Scripts"
+    if not scripts.is_dir():
+        return 0
+    new_pyw = new_python.with_name("pythonw.exe")
+    pattern = re.compile(rb"#!([^\r\n]*?pythonw?\.exe)", re.IGNORECASE)
+    changed = 0
+    for exe in scripts.glob("*.exe"):
+        if exe.name.lower() in {"python.exe", "pythonw.exe"}:
+            continue
+        try:
+            data = exe.read_bytes()
+        except OSError:
+            continue
+        match = pattern.search(data)
+        if not match:
+            continue
+        target = new_pyw if match.group(1).lower().endswith(b"pythonw.exe") else new_python
+        patched = data[:match.start()] + b"#!" + os.fsencode(str(target)) + data[match.end():]
+        if patched == data:
+            continue
+        try:
+            exe.write_bytes(patched)
+        except OSError:
+            continue
+        changed += 1
+    return changed
+
+
+def _rewrite_runtime_text_paths(root: Path, source: Path, target: Path) -> int:
+    """Patch absolute paths embedded in activate scripts, .pth files and configs."""
+    old = os.fsencode(str(source))
+    new = os.fsencode(str(target))
+    if old == new:
+        return 0
+    suffixes = {".json", ".cfg", ".pth", ".bat", ".ps1", ".sh", ".fish", ".txt", ".toml", ".ini"}
+    changed = 0
+    for path in root.rglob("*"):
+        try:
+            if path.is_symlink() or not path.is_file():
+                continue
+            name = path.name.lower()
+            if path.suffix.lower() not in suffixes and not name.startswith("activate") and name != "deactivate.bat":
+                continue
+            data = path.read_bytes()
+            if old not in data:
+                continue
+            path.write_bytes(data.replace(old, new))
+            changed += 1
+        except OSError:
+            continue
+    return changed
+
+
+def _rewrite_runtime_json_paths(path: Path, source: Path, target: Path) -> bool:
+    """Rewrite absolute path strings inside a JSON state file (escaped backslashes included)."""
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+
+    old = str(source)
+    new = str(target)
+
+    def convert(item: Any) -> Any:
+        if isinstance(item, str):
+            return item.replace(old, new).replace(old.replace("\\", "/"), new.replace("\\", "/"))
+        if isinstance(item, dict):
+            return {key: convert(entry) for key, entry in item.items()}
+        if isinstance(item, list):
+            return [convert(entry) for entry in item]
+        return item
+
+    updated = convert(value)
+    if updated == value:
+        return False
+    _atomic_write_json(path, updated)
+    return True
+
+
+@_serialized_runtime_command
+def cmd_migrate_runtime_envs(payload: dict[str, Any]) -> int:
+    """Move all managed runtime environments to a user-chosen directory.
+
+    The Rust command invokes this BEFORE persisting the new directory in
+    app-settings, so this process still sees the old root and holds its runtime
+    management lock. Every absolute path written into a venv is repaired here;
+    the next worker started after the setting change sees the new root.
+    """
+    from worker_protocol import emit_error
+
+    task_id = str(payload.get("taskId") or f"runtime_dir_migration_{int(time.time() * 1000)}")
+    raw_target = str(payload.get("targetDir") or "").strip()
+    if not raw_target:
+        return emit_error("RUNTIME_DIR_MIGRATION_FAILED", "Missing target directory", task_id=task_id)
+    target = Path(os.path.normpath(str(Path(raw_target).expanduser())))
+    if not target.is_absolute():
+        return emit_error("RUNTIME_DIR_MIGRATION_FAILED", "Target directory must be absolute", task_id=task_id)
+    source = Path(os.path.normpath(str(RUNTIME_ENVS_DIR)))
+    if target == source:
+        _emit("runtime_dir_migration_finished", {"runtimeEnvsDir": str(target), "backends": []}, task_id)
+        return 0
+    if source in target.parents or target in source.parents:
+        return emit_error(
+            "RUNTIME_DIR_MIGRATION_FAILED",
+            "Target directory must not contain or be contained in the current runtime directory",
+            task_id=task_id,
+        )
+    if target.exists() and (not target.is_dir() or any(target.iterdir())):
+        return emit_error(
+            "RUNTIME_DIR_MIGRATION_FAILED",
+            "Target directory must be empty",
+            task_id=task_id,
+        )
+
+    import shutil as _shutil
+
+    try:
+        target.mkdir(parents=True, exist_ok=True)
+        moved: list[str] = []
+        if source.is_dir():
+            for entry in sorted(source.iterdir(), key=lambda item: item.name):
+                # The management lock is held open by this very command; moving an
+                # open file on Windows fails. A fresh lock is created in the new root.
+                if entry.name == ".runtime-management.lock" or entry.name.endswith(".tmp"):
+                    continue
+                destination = target / entry.name
+                if destination.exists():
+                    raise RuntimeError(f"destination already exists: {destination}")
+                _shutil.move(str(entry), str(destination))
+                moved.append(entry.name)
+        backends = [name for name in moved if _supported_backend(name)]
+        for backend in backends:
+            env_dir = target / backend
+            _repair_runtime_venv_config(env_dir)
+            interpreter = env_dir / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+            _rewrite_runtime_launchers(env_dir, interpreter)
+            _make_posix_venv_relocatable(env_dir)
+        _rewrite_runtime_text_paths(target, source, target)
+        state_files = [target / "active-runtime.json"]
+        state_files += [target / backend / "pymss-runtime-state.json" for backend in backends]
+        for state_file in state_files:
+            if state_file.is_file():
+                _rewrite_runtime_json_paths(state_file, source, target)
+    except Exception as exc:
+        return emit_error("RUNTIME_DIR_MIGRATION_FAILED", str(exc), task_id=task_id, recoverable=True)
+
+    _emit(
+        "runtime_dir_migration_finished",
+        {"runtimeEnvsDir": str(target), "backends": backends},
+        task_id,
+    )
+    return 0
+
+
 @_serialized_runtime_command
 def cmd_install_runtime(payload: dict[str, Any]) -> int:
     """Build and activate an environment for `backend`.
@@ -2228,6 +2419,9 @@ def cmd_install_runtime(payload: dict[str, Any]) -> int:
     backend = str(payload.get("backend") or "cpu").strip().lower()
     mirror = str(payload.get("mirror") or "auto").strip().lower()
     locale = str(payload.get("locale") or "").strip().lower()
+    torch_source = str(payload.get("torchSource") or "official").strip().lower()
+    if torch_source not in {"official", *PYTORCH_MIRROR_ROOTS}:
+        torch_source = "official"
     manifest = _manifest()
     _recover_runtime_transactions()
     supported = _supported_backend(backend, manifest)
@@ -2263,7 +2457,12 @@ def cmd_install_runtime(payload: dict[str, Any]) -> int:
         with install_log_path.open("a", encoding="utf-8", errors="replace") as file:
             file.write(f"[{stage}] {message}\n")
 
-    def run_pip(args: list[str], stage: str, package_index: str | None = None) -> None:
+    def run_pip(
+        args: list[str],
+        stage: str,
+        package_index: str | None = None,
+        find_links: str | None = None,
+    ) -> None:
         command = [str(env_python), "-m", "pip", "install", "--no-cache-dir"]
         if stage == "pymss":
             command.append("--upgrade")
@@ -2271,6 +2470,8 @@ def cmd_install_runtime(payload: dict[str, Any]) -> int:
             command.extend(["--only-binary=:all:", "--prefer-binary"])
         if package_index or (index_url and stage != "torch"):
             command.extend(["--index-url", package_index or index_url])
+        if find_links:
+            command.extend(["--find-links", find_links])
         command.extend(args)
         append_log(stage, "pip install " + " ".join(args))
         _emit("runtime_install_stage", {"stage": stage, "command": "pip install " + " ".join(args)}, task_id)
@@ -2304,7 +2505,7 @@ def cmd_install_runtime(payload: dict[str, Any]) -> int:
 
     try:
         install_log_path.write_text(
-            f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] install backend={backend} mirror={mirror} manifest={manifest['manifestVersion']}\n",
+            f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] install backend={backend} mirror={mirror} torchSource={torch_source} manifest={manifest['manifestVersion']}\n",
             encoding="utf-8",
         )
         rebuild_message = ""
@@ -2347,7 +2548,23 @@ def cmd_install_runtime(payload: dict[str, Any]) -> int:
         if torch.get("rocmRequirements"):
             run_pip(list(torch["rocmRequirements"]), "rocm-sdk", None)
         torch_args = list(torch.get("requirements", [])) if torch.get("requirements") else [torch["requirement"]]
-        run_pip((["--no-deps"] if torch.get("noDeps") else []) + torch_args, "torch", torch.get("indexUrl"))
+        torch_command = (["--no-deps"] if torch.get("noDeps") else []) + torch_args
+        official_torch_index = torch.get("indexUrl")
+        torch_index, torch_find_links = _resolve_torch_index(official_torch_index, torch_source)
+        if torch_index != official_torch_index or torch_find_links:
+            selected_torch_source = torch_find_links or torch_index
+            append_log("torch", f"using torch source {torch_source}: {selected_torch_source}")
+            _emit("runtime_install_stage", {"stage": "torch", "source": torch_source, "url": selected_torch_source}, task_id)
+            try:
+                run_pip(torch_command, "torch", torch_index, torch_find_links)
+            except RuntimeError:
+                if torch_source == "official":
+                    raise
+                append_log("torch", "selected torch mirror failed, retrying official PyTorch index")
+                _emit("runtime_install_stage", {"stage": "torch", "message": "Selected torch mirror failed, retrying official PyTorch index"}, task_id)
+                run_pip(torch_command, "torch", official_torch_index)
+        else:
+            run_pip(torch_command, "torch", official_torch_index)
         common = [value for name, value in manifest["common"].items() if name not in {"pymss", "pymss-core"}]
         pymss_requirement = manifest["common"]["pymss"]
         pymss_core_requirement = manifest["common"]["pymss-core"]
@@ -2536,7 +2753,7 @@ def cmd_update_runtime_core(payload: dict[str, Any]) -> int:
         return emit_error(
             "RUNTIME_MANIFEST_INCOMPATIBLE",
             "This Studio version cannot recognize the current runtime's dependency information. "
-            "Update Pymss Studio first, then retry the core update. "
+            "Update SoundFlow first, then retry the core update. "
             "If Studio is already up to date, recheck the environment and include the technical details in a bug report.",
             task_id=task_id,
             recoverable=True,

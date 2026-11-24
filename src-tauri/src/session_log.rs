@@ -11,7 +11,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use tauri::{AppHandle, Emitter, Manager};
 
 const SESSION_LOG_FILE_NAME: &str = "current-session.log";
-const PERSISTENT_LOG_FILE_NAME: &str = "pymss-studio.log";
+const PERSISTENT_LOG_FILE_NAME: &str = "soundflow.log";
 const DIAGNOSTIC_REPORT_FILE_NAME: &str = "latest-diagnostic-report.md";
 const MAX_LINE_CHARS: usize = 8 * 1024;
 const MAX_LOG_BYTES: u64 = 5 * 1024 * 1024;
@@ -620,7 +620,7 @@ fn rotate_persistent_log_if_needed(path: &PathBuf) -> AppResult<()> {
 }
 
 fn persistent_backup_path(path: &PathBuf, index: usize) -> PathBuf {
-    path.with_file_name(format!("pymss-studio.{index}.log"))
+    path.with_file_name(format!("soundflow.{index}.log"))
 }
 
 fn create_diagnostic_report_with_trigger(
@@ -879,7 +879,7 @@ fn append_report_block(output: &mut String, title: &str, language: &str, content
 }
 
 fn render_diagnostic_report(data: DiagnosticReportData) -> String {
-    let mut output = "# Pymss Studio Diagnostic Report\n\nReport schema: 2. Runtime observations and navigation cover the current process. Task history and preferences come from saved snapshots and may lag active work. Empty observations mean no data was captured, not that the feature was never used.\n\nRequest summaries omit credentials, transcript text, audio contents and arbitrary graph text. Collection and section limits are reported below. Check custom names and remaining paths before sharing.\n".to_string();
+    let mut output = "# SoundFlow Diagnostic Report\n\nReport schema: 2. Runtime observations and navigation cover the current process. Task history and preferences come from saved snapshots and may lag active work. Empty observations mean no data was captured, not that the feature was never used.\n\nRequest summaries omit credentials, transcript text, audio contents and arbitrary graph text. Collection and section limits are reported below. Check custom names and remaining paths before sharing.\n".to_string();
     append_report_json(&mut output, "Build, Session and Paths", data.metadata);
     for (title, summary) in data.sections {
         append_report_json(&mut output, title, summary);
@@ -1474,7 +1474,7 @@ mod tests {
     #[test]
     fn stored_records_remain_parseable_alongside_legacy_text_and_after_rotation() {
         let temporary = tempfile::tempdir().unwrap();
-        let path = temporary.path().join("pymss-studio.log");
+        let path = temporary.path().join("soundflow.log");
         append_line(&path, "1792407070.344Z INFO app.start version=0.0.21\n").unwrap();
         let mut record = LogRecord::new(
             "pymss",

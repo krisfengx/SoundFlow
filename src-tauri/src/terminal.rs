@@ -98,7 +98,7 @@ fn supports_color() -> bool {
     if let Some(enabled) = color_override(
         std::env::var_os("NO_COLOR").is_some(),
         std::env::var_os("FORCE_COLOR").as_deref(),
-        std::env::var("PYMSS_STUDIO_TERMINAL_COLOR").is_ok_and(|value| value == "1"),
+        std::env::var("SOUNDFLOW_TERMINAL_COLOR").is_ok_and(|value| value == "1"),
     ) {
         // The CLI captures terminal capability before Tauri creates its stderr pipe.
         return enabled;
@@ -449,8 +449,8 @@ mod tests {
                 "command": "env_info", "taskId": "task-a", "requestId": "request-a",
                 "nodeId": "node-a", "jobId": "job-a", "backend": "cpu",
                 "python": "D:/runtime/python.exe", "worker": "D:/app/python/worker.py",
-                "payloadFile": "D:/Temp/payload.json", "path": "D:/Pymss Studio/app.exe",
-                "dataRoot": "D:/Pymss Studio/data", "logsDir": "D:/Pymss Studio/logs",
+                "payloadFile": "D:/Temp/payload.json", "path": "D:/SoundFlow/app.exe",
+                "dataRoot": "D:/SoundFlow/data", "logsDir": "D:/SoundFlow/logs",
                 "torchError": "DLL load failed: missing dependency",
                 "cudaAvailableError": "Driver unavailable", "torchAvailable": false,
                 "deviceCount": 0, "futureDiagnostic": {"enabled": true, "devices": [1, 2]},

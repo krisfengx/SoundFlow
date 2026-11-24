@@ -42,7 +42,7 @@ def main():
             errors = []
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.add_init_script('for(const [name,value] of Object.entries(' + json.dumps(state) + ''')) {
-              const key='pymss-studio:'+name;
+              const key='soundflow:'+name;
               if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify(value));
             }''')
             page.goto(args.url.rstrip('/') + '/#/results', wait_until='networkidle')

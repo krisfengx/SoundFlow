@@ -10,11 +10,11 @@
 
 **这个目录里会不会出现模型权重文件？**
 
-- 会 → **模型层** `data/`
+- 会 → **模型层** `.soundflow/`
 - 不会 → **环境层** `.venv/`
 
 由此得到缓存变量的归属：`HF_HOME` / `TORCH_HOME` / `MODELSCOPE_CACHE` 可能落下权重，
-归 `data/models/_cache/`；`PIP_CACHE_DIR` / `CARGO_HOME` / `npm_config_cache` / `PNPM_HOME` /
+归 `.soundflow/models/_cache/`；`PIP_CACHE_DIR` / `CARGO_HOME` / `npm_config_cache` / `PNPM_HOME` /
 `XDG_CACHE_HOME` / `TMP*` 只放包与编译缓存，归 `.venv/`。
 
 再加一条实现约束：**任何默认落点都由代码位置推导**（Python `__file__`、
@@ -32,7 +32,7 @@ Rust `CARGO_MANIFEST_DIR`、Node `import.meta.url`），不把用户目录当默
 │   ├─ cache/{pip,cargo,npm,pnpm,xdg}/
 │   ├─ tmp/                        TMP / TEMP / TMPDIR
 │   └─ node/pnpm-store/            前端依赖内容寻址 store
-├─ data/                           运行态 + 模型层：可整体备份/迁移
+├─ .soundflow/                       运行态 + 模型层：可整体备份/迁移
 │   ├─ settings/ logs/ outputs/ temp/ editor-projects/ debug/
 │   └─ models/
 │       ├─ _tool_models/<tool>/models/   应用下载器写入（歌词 / 通用 ASR）
@@ -42,8 +42,8 @@ Rust `CARGO_MANIFEST_DIR`、Node `import.meta.url`），不把用户目录当默
 └─ _debug_output/                 调试产物（被 gitignore，不进 commit）
 ```
 
-`.venv/` 和 `data/` 都不进 git，clone 后由命令生成。二者互不夹带：删掉 `.venv/`
-不丢任何模型，备份 `data/` 不会带上环境缓存。
+`.venv/` 和 `.soundflow/` 都不进 git，clone 后由命令生成。 旧版开发目录 `data/` 存在时会被应用自动沿用，避免升级丢数据。二者互不夹带：删掉 `.venv/`
+不丢任何模型，备份 `.soundflow/` 不会带上环境缓存。
 
 ## 3. 生命周期：谁在什么阶段写什么
 
@@ -52,12 +52,12 @@ Rust `CARGO_MANIFEST_DIR`、Node `import.meta.url`），不把用户目录当默
 | clone | `git clone` | 仅源码 | git |
 | 建前端依赖 | `corepack pnpm dev:setup:desktop` | `node_modules/`、`.venv/node/pnpm-store/` | `.npmrc` 的 `store-dir`（相对） |
 | 建 Python 引导环境 | 同上 | `.venv/bootstrap/` | `scripts/dev-env.mjs bootstrap()` |
-| 注入环境变量 | 每次 `dev:desktop` / worker / `test:*` | 创建 `.venv/cache/*`、`.venv/tmp`、`data/models/_cache/*` | `pinnedEnv()` |
+| 注入环境变量 | 每次 `dev:desktop` / worker / `test:*` | 创建 `.venv/cache/*`、`.venv/tmp`、`.soundflow/models/_cache/*` | `pinnedEnv()` |
 | 编译 | `pnpm dev:desktop` | `src-tauri/target/`、`dist/` | cargo / vite |
-| 启动 | Tauri | `data/{settings,logs,outputs,temp,editor-projects,debug}/` | `src-tauri/src/storage.rs`（编译期 `CARGO_MANIFEST_DIR`） |
+| 启动 | Tauri | `.soundflow/{settings,logs,outputs,temp,editor-projects,debug}/` | `src-tauri/src/storage.rs`（编译期 `CARGO_MANIFEST_DIR`） |
 | 下载运行环境 | app「设置 → 运行环境」 | `.venv/python/runtime-envs/` | `storage.rs::runtime_envs_dir()` |
-| 下载模型 | app「模型管理」/ 歌词页 | `data/models/_tool_models/...` | `settings.modelDir` |
-| 第三方库自行下载 | 推理时本地未命中 | `data/models/_cache/...` | `HF_HOME` / `TORCH_HOME` / `MODELSCOPE_CACHE` |
+| 下载模型 | app「模型管理」/ 歌词页 | `.soundflow/models/_tool_models/...` | `settings.modelDir` |
+| 第三方库自行下载 | 推理时本地未命中 | `.soundflow/models/_cache/...` | `HF_HOME` / `TORCH_HOME` / `MODELSCOPE_CACHE` |
 | 调试产物 | 开发脚本 | `_debug_output/{screenshots,logs,diag,tmp,...}/` | `scripts/debug_paths.py` |
 
 前置条件见 `setup/toolchain.json`：Node 22 + pnpm 10.33.2、Rust stable + Tauri 平台依赖、
@@ -66,7 +66,7 @@ Python 3.12（桌面/worker 开发）。`dev:setup:desktop` 只生成几 MB 的 
 
 ### 3.1 新 clone 首次启动到底会生成什么
 
-前提：clone 后 `.venv/`、`data/`、`node_modules/`、`src-tauri/target/`、`python/preinstalled_plugins/` **都不存在**。
+前提：clone 后 `.venv/`、`.soundflow/`、`node_modules/`、`src-tauri/target/`、`python/preinstalled_plugins/` **都不存在**。
 
 **阶段 A — `corepack pnpm dev:setup:desktop`**
 
@@ -76,7 +76,7 @@ Python 3.12（桌面/worker 开发）。`dev:setup:desktop` 只生成几 MB 的 
 | `.venv/node/pnpm-store/v10/` | 内容寻址 store（文件硬链接到 `node_modules/.pnpm`） | `.npmrc` 的 `store-dir` |
 | `.venv/bootstrap/` | `pyvenv.cfg`、`Scripts/python.exe`（macOS/Linux 为 `bin/python`）、pip、`requests[socks]` | `bootstrap()` → `python3.12 -m venv` + `pip install` |
 | `.venv/cache/{pip,cargo,npm,pnpm,xdg}/`、`.venv/tmp/`、`.venv/python/runtime-envs/` | **空目录**，先建好路径 | `pinnedEnv({createDirs:true})` |
-| `data/models/_cache/{hf,torch,modelscope}/` | **空目录**，第三方库兜底位 | 同上 |
+| `.soundflow/models/_cache/{hf,torch,modelscope}/` | **空目录**，第三方库兜底位 | 同上 |
 
 末尾的 `check` 阶段只读，不写文件。
 
@@ -88,17 +88,17 @@ Python 3.12（桌面/worker 开发）。`dev:setup:desktop` 只生成几 MB 的 
 | `.cache/preinstalled-plugins/` | 插件仓库下载缓存 | 同上 |
 | `node_modules/.vite/` | Vite 预构建缓存 | `pnpm dev`（devUrl 1420） |
 | `src-tauri/target/debug/` | Rust 编译产物，含 `incremental/`（GB 级） | cargo |
-| `data/{settings,models,outputs,editor-projects,logs,temp}/` | 空目录骨架 | `storage.rs::ensure_app_directories()` |
-| `data/logs/current-session.log`、`pymss-studio.log` | 会话日志 | `session_log.rs` |
+| `.soundflow/{settings,models,outputs,editor-projects,logs,temp}/` | 空目录骨架 | `storage.rs::ensure_app_directories()` |
+| `.soundflow/logs/current-session.log`、`soundflow.log` | 会话日志 | `session_log.rs` |
 
 dev 模式用 `devUrl`，**不会生成仓库根 `dist/`**；`dist/` 只在 `pnpm build` 时出现。
 
 **阶段 C — 首次使用某功能才生成（启动时不会出现）**
 
-- `data/settings/*.json`（`app.json`、`model-cache.json`、`tasks.json` …）：首次保存设置 / 下载模型时按 `store_file_name()` 写入；只读且文件不存在时返回空值，**不会主动创建**。
+- `.soundflow/settings/*.json`（`app.json`、`model-cache.json`、`tasks.json` …）：首次保存设置 / 下载模型时按 `store_file_name()` 写入；只读且文件不存在时返回空值，**不会主动创建**。
 - `.venv/python/runtime-envs/{cuda,cpu}/`：app「设置 → 运行环境」安装（GB 级）。
-- `data/models/_tool_models/<tool>/models/`：app「模型管理」下载（GB 级）。
-- `data/debug/`、`data/plugins/`、`data/logs/latest-diagnostic-report.md`、`.venv/tmp/` 下的临时 wav/json：按需。
+- `.soundflow/models/_tool_models/<tool>/models/`：app「模型管理」下载（GB 级）。
+- `.soundflow/debug/`、`.soundflow/plugins/`、`.soundflow/logs/latest-diagnostic-report.md`、`.venv/tmp/` 下的临时 wav/json：按需。
 - `_debug_output/`：开发调试脚本首次写入时由 `scripts/debug_paths.py` 创建。
 
 **明确不会自动生成**：任何模型权重、torch/CUDA 运行环境、Windows 本机历史工具链
@@ -153,9 +153,9 @@ worker 各模块的回退函数都不再指向用户目录。
 - `python/preinstalled_plugins/` 是**运行时生成的离线插件快照**（被 `.gitignore` 排除，
   只有 `python/plugin-manifest.json` 受跟踪）。`verify_generated()` 要求该目录的文件集合与
   manifest 精确相等，多一个 `.pyc` 都会让快照失效、触发 dev 启动时联网重拉；因此它固定在
-  `python/` 下、不迁进 `data/`。运行时下载的市场插件仍落在
-  `.venv/python/runtime-envs/.../plugins/` 与 `data/plugins/`。
-- `data/models/legacy_vr/` 与 `data/models/vocal/` 是早期人声分离模型，属于模型层但未归入
+  `python/` 下、不迁进 `.soundflow/`。运行时下载的市场插件仍落在
+  `.venv/python/runtime-envs/.../plugins/` 与 `.soundflow/plugins/`。
+- `.soundflow/models/legacy_vr/` 与 `.soundflow/models/vocal/` 是早期人声分离模型，属于模型层但未归入
   `_tool_models/`。当前没有代码按旧路径硬编码读取，**保持原位**，只在文档中标注；
   未来归位前需重新确认插件是否按 `modelDir` 相对路径引用它们。
 - `python-runtime/`（打包脚本产物）与 `data-vst-lab/`（vst-lab 专用）属于可选工具产物层，
@@ -173,8 +173,8 @@ worker 各模块的回退函数都不再指向用户目录。
 | 释放前端依赖空间 | 删 `node_modules/` 后 `pnpm install --offline --frozen-lockfile`（store 在项目内） |
 | 释放编译空间 | 删 `src-tauri/target/` 或只删 `target/debug/incremental/`，下次构建自动重建 |
 | 重置整个环境 | 删 `.venv/` 后重跑 `dev:setup:desktop`；**模型不会丢** |
-| 迁移模型库 | 整体复制 `data/models/`，路径由 `settings.modelDir` 记录 |
-| 排查越界写入 | 跑 `env:paths`；若报 `PYMSS_STUDIO_DATA_ROOT` 等外部变量，清理该 shell 变量后重试 |
+| 迁移模型库 | 整体复制 `.soundflow/models/`，路径由 `settings.modelDir` 记录 |
+| 排查越界写入 | 跑 `env:paths`；若报 `SOUNDFLOW_DATA_ROOT` 等外部变量，清理该 shell 变量后重试 |
 
 提交代码时仍遵循项目铁律：只提交主要源码，禁用 `git add -A`；上表所有目录都在
 `.gitignore` 覆盖范围内，不应出现在 `git status` 里。

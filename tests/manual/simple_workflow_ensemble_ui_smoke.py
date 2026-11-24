@@ -86,11 +86,11 @@ with sync_playwright() as playwright:
     page.add_init_script(
         f"""(() => {{
           localStorage.setItem(
-            'pymss-studio:app-settings',
+            'soundflow:app-settings',
             JSON.stringify({{ startupOnboardingSeen: true, locale: 'en' }}),
           )
-          localStorage.setItem('pymss-studio:workflow-state', JSON.stringify({json.dumps(workflow_state)}))
-          localStorage.setItem('pymss-studio:model-state', JSON.stringify({json.dumps(model_state)}))
+          localStorage.setItem('soundflow:workflow-state', JSON.stringify({json.dumps(workflow_state)}))
+          localStorage.setItem('soundflow:model-state', JSON.stringify({json.dumps(model_state)}))
         }})()"""
     )
     page.goto("http://localhost:1420/#/workflow-simple-editor?workflowId=ensemble-simple")
@@ -158,7 +158,7 @@ with sync_playwright() as playwright:
     expect(page.get_by_role("button", name="Save", exact=True)).to_be_enabled()
     page.get_by_role("button", name="Save", exact=True).click()
     expect(page.locator(".n-message__content", has_text="Workflow saved")).to_be_visible()
-    stored = page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:workflow-state'))")
+    stored = page.evaluate("JSON.parse(localStorage.getItem('soundflow:workflow-state'))")
     saved_definition = stored["workflows"][0]["definition"]
     assert saved_definition["ensembles"][0]["output_stem"] == "Vocals"
     assert [item["source"] for item in saved_definition["ensembles"][0]["inputs"]] == [

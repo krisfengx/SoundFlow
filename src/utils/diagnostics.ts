@@ -77,7 +77,7 @@ export function buildDiagnosticChecks(input: {
     detail: probeError || undefined, hint: 'debug.hintRuntime', action: 'runtime',
   })
 
-  // A stale PYMSS_STUDIO_PYTHON (e.g. a deleted legacy venv) makes every bootstrap
+  // A stale SOUNDFLOW_PYTHON (e.g. a deleted legacy venv) makes every bootstrap
   // worker command fail with a bare `os error 3`. Surface it before the user hits it.
   const bootstrapExists = runtime?.bootstrapPythonExists
   // A successful runtime probe already proves the bootstrap interpreter works (worker

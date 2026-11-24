@@ -30,7 +30,7 @@ with sync_playwright() as playwright:
                 mock = mock.replace("locale:'zh-CN'", 'locale:' + repr(locale))
                 mock = mock.replace("formats:['vst3']", "formats:['vst3','vst2']")
                 page.add_init_script(f'({mock})(true)')
-                page.add_init_script('localStorage.setItem("pymss-studio:editor-ui",' +
+                page.add_init_script('localStorage.setItem("soundflow:editor-ui",' +
                                      json.dumps(json.dumps({'inspectorCollapsed': False,
                                                            'inspectorPanelWidth': panel_width,
                                                            'assetCollapsed': True})) + ')')

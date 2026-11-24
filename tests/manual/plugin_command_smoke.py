@@ -43,11 +43,11 @@ def main():
     expected = "一行\nsecond\nthird\n".encode()
     environment = {**os.environ,
         "PYTHONPATH": os.pathsep.join([str(kernel), str(studio / "python")]),
-        "PYMSS_STUDIO_RUNTIME_ENVS_DIR": str(work / "runtimes"),
-        "PYMSS_STUDIO_ACTIVE_RUNTIME_FILE": str(work / "active.json"),
+        "SOUNDFLOW_RUNTIME_ENVS_DIR": str(work / "runtimes"),
+        "SOUNDFLOW_ACTIVE_RUNTIME_FILE": str(work / "active.json"),
         "PYMSS_PLUGINS_DIR": str(work / "unmanaged"),
         "PYMSS_SCRATCH_DIR": str(work / "scratch"),
-        "PYMSS_STUDIO_DEFAULT_OUTPUT_DIR": str(work / "outputs"),
+        "SOUNDFLOW_DEFAULT_OUTPUT_DIR": str(work / "outputs"),
         "PYTHONDONTWRITEBYTECODE": "1", "PIP_NO_INDEX": "1",
     }
     (work / "scratch").mkdir()
@@ -56,7 +56,7 @@ def main():
     observations = []
 
     released_environment = {**environment, "PYTHONPATH": str(studio / "python"),
-                            "PYMSS_STUDIO_RUNTIME_ENVS_DIR": str(work / "released-runtimes")}
+                            "SOUNDFLOW_RUNTIME_ENVS_DIR": str(work / "released-runtimes")}
     helper = "register_rpc_processes" if rpc else "register_commands"
     availability = ("import importlib.util;print(importlib.util.find_spec('pymss.operations.python_profiles') is not None)" if python
                     else f"from pymss.plugins import kit;print(hasattr(kit,{helper!r}))")
@@ -156,7 +156,7 @@ print(json.dumps(result.records[0].to_dict()))
             page = browser.new_page(viewport={"width": 1280, "height": 900})
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
-            page.add_init_script("""if(window===window.top)localStorage.setItem('pymss-studio:app-settings',JSON.stringify({
+            page.add_init_script("""if(window===window.top)localStorage.setItem('soundflow:app-settings',JSON.stringify({
               startupOnboardingSeen:true,beginnerGuideInvitationSeen:true,locale:'zh-CN',themeMode:'light',animationsEnabled:false,pluginDefaultsPolicy:'review'}))""")
 
             def invoke_worker(_source, request):

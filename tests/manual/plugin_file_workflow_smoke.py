@@ -28,8 +28,8 @@ def main():
     expected = '一行\nsecond\nthird\n'.encode()
     environment = {**os.environ,
         'PYTHONPATH': os.pathsep.join([str(studio.parent / 'pymss'), str(studio / 'python')]),
-        'PYMSS_STUDIO_RUNTIME_ENVS_DIR': str(fixture / 'runtimes'),
-        'PYMSS_STUDIO_ACTIVE_RUNTIME_FILE': str(fixture / 'active.json'),
+        'SOUNDFLOW_RUNTIME_ENVS_DIR': str(fixture / 'runtimes'),
+        'SOUNDFLOW_ACTIVE_RUNTIME_FILE': str(fixture / 'active.json'),
         'PYMSS_PLUGINS_DIR': str(fixture / 'unmanaged'),
         'PYMSS_SCRATCH_DIR': str(work / 'scratch'),
         'PYTHONDONTWRITEBYTECODE': '1', 'PIP_NO_INDEX': '1',
@@ -72,10 +72,10 @@ def main():
             errors = []
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.on('crash', lambda: errors.append('Page renderer crashed'))
-            context.add_init_script('localStorage.setItem("pymss-studio:app-settings",JSON.stringify(' + json.dumps({
+            context.add_init_script('localStorage.setItem("soundflow:app-settings",JSON.stringify(' + json.dumps({
                 'startupOnboardingSeen': True, 'beginnerGuideInvitationSeen': True, 'locale': 'zh-CN',
                 'animationsEnabled': False, 'outputDir': str(work / 'output'),
-            }) + ')); localStorage.setItem("pymss-studio:workflow-state",JSON.stringify(' + json.dumps({
+            }) + ')); localStorage.setItem("soundflow:workflow-state",JSON.stringify(' + json.dumps({
                 'workflows': [entry], 'selectedWorkflowId': entry['id'],
             }) + '));')
             context.expose_binding('__worker', lambda _source, request: worker(request['command'], request['payload']))
@@ -102,13 +102,13 @@ def main():
                   if(command==='list_nodes')return (await window.__worker({command,payload:{}})).at(-1).payload;
                   if(command==='get_workflow_editors')return {revision:0,editors:[]};
                   if(command==='open_workflow_node_editor_window')return {label:'workflow-files'};
-                  if(command==='load_app_store')return JSON.parse(localStorage.getItem('pymss-studio:'+args.name)||'null');
-                  if(command==='save_app_store'){localStorage.setItem('pymss-studio:'+args.name,JSON.stringify(args.data));return null}
+                  if(command==='load_app_store')return JSON.parse(localStorage.getItem('soundflow:'+args.name)||'null');
+                  if(command==='save_app_store'){localStorage.setItem('soundflow:'+args.name,JSON.stringify(args.data));return null}
                   if(command==='mutate_workflow_store'){
-                    const state=JSON.parse(localStorage.getItem('pymss-studio:workflow-state'));
+                    const state=JSON.parse(localStorage.getItem('soundflow:workflow-state'));
                     const entry=args.payload.entry,index=state.workflows.findIndex(item=>item.id===entry.id);
                     if(index<0)state.workflows.push(entry);else state.workflows[index]=entry;
-                    localStorage.setItem('pymss-studio:workflow-state',JSON.stringify(state));return {state};
+                    localStorage.setItem('soundflow:workflow-state',JSON.stringify(state));return {state};
                   }
                   if(command==='start_workflow_inference'){
                     window.__workerPayloads.push(args.payload);

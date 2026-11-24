@@ -618,7 +618,7 @@ export const useAppStore = defineStore('app', () => {
     if (!runtimeManagementSupported.value) throw new Error('Runtime management is only available on Windows and Linux.')
   }
 
-  async function installRuntime(backend: RuntimeBackend, mirror = 'auto', locale = '') {
+  async function installRuntime(backend: RuntimeBackend, mirror = 'auto', locale = '', torchSource = 'official') {
     requireRuntimeManagement()
     const taskId = `runtime_install_${crypto.randomUUID()}`
     runtimeInstallTaskId.value = taskId
@@ -627,7 +627,7 @@ export const useAppStore = defineStore('app', () => {
     runtimeInstallMessage.value = ''
     runtimeInstallLogs.value = []
     try {
-      await startRuntimeBackground('start_runtime_install', taskId, { taskId, backend, mirror, locale }, 'runtime_install_finished')
+      await startRuntimeBackground('start_runtime_install', taskId, { taskId, backend, mirror, locale, torchSource }, 'runtime_install_finished')
     } catch (error) {
       runtimeInstallStatus.value = 'error'
       runtimeInstallMessage.value = error instanceof Error ? error.message : String(error)

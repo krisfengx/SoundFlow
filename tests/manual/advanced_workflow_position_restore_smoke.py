@@ -32,7 +32,7 @@ with sync_playwright() as playwright:
     page = browser.new_page(viewport={"width": 1440, "height": 1000})
     page.add_init_script(
         """localStorage.setItem(
-          'pymss-studio:app-settings',
+          'soundflow:app-settings',
           JSON.stringify({ startupOnboardingSeen: true, locale: 'en' }),
         )"""
     )
@@ -60,7 +60,7 @@ with sync_playwright() as playwright:
 
     page.wait_for_function(
         """expected => {
-          const definition = JSON.parse(localStorage.getItem('pymss-studio:workflow-state') || '{}').workflows?.[0]?.definition;
+          const definition = JSON.parse(localStorage.getItem('soundflow:workflow-state') || '{}').workflows?.[0]?.definition;
           return definition?.nodes?.length === Object.keys(expected.positions).length
             && definition.nodes.every(node => JSON.stringify(node.pos) === JSON.stringify(expected.positions[node.type]))
             && JSON.stringify(definition.extra?.ds) === JSON.stringify(expected.viewport);
@@ -68,7 +68,7 @@ with sync_playwright() as playwright:
         arg={"positions": EXPECTED_POSITIONS, "viewport": EXPECTED_VIEWPORT},
     )
     stored = page.evaluate(
-        "JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows[0]"
+        "JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows[0]"
     )
     workflow_id = stored["id"]
     stored_positions = {node["type"]: node["pos"] for node in stored["definition"]["nodes"]}

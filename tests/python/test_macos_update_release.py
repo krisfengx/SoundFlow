@@ -41,7 +41,7 @@ class MacosUpdateReleaseTests(unittest.TestCase):
 source=$1
 target=$2
 checks=$3
-identifier=studio.pymss.desktop
+identifier=studio.soundflow.desktop
 version=1.1.0
 plist() {
     directory=$(dirname "$3")
@@ -58,14 +58,14 @@ verify_signature() {
 }
 '''
         command += (functions + checks).replace("/usr/libexec/PlistBuddy", "plist").replace("/usr/bin/codesign", "verify_signature")
-        cases = [("invalid", "valid", "studio.pymss.desktop", True),
-                 ("valid", "invalid", "studio.pymss.desktop", False),
+        cases = [("invalid", "valid", "studio.soundflow.desktop", True),
+                 ("valid", "invalid", "studio.soundflow.desktop", False),
                  ("invalid", "valid", "another.application", False)]
         for old_seal, new_seal, old_id, success in cases:
             with self.subTest(old_seal=old_seal, new_seal=new_seal, old_id=old_id), tempfile.TemporaryDirectory() as value:
                 root = Path(value)
                 source, target = root / "New app", root / "Installed app"
-                for bundle, seal, identity in [(source, new_seal, "studio.pymss.desktop"), (target, old_seal, old_id)]:
+                for bundle, seal, identity in [(source, new_seal, "studio.soundflow.desktop"), (target, old_seal, old_id)]:
                     (bundle / "Contents").mkdir(parents=True)
                     (bundle / "Contents/identifier").write_text(identity)
                     (bundle / "Contents/version").write_text("1.1.0")
@@ -134,7 +134,7 @@ if [ "$mode" != success ]; then rollback; fi
         function = 'cleanup_legacy_stages() {' + installer.split('cleanup_legacy_stages() {', 1)[1].split('\nfinish() {', 1)[0]
         with tempfile.TemporaryDirectory() as value:
             parent = Path(value)
-            valid, active, unknown, invalid, ended, expired = [parent / ('.pymss-studio-update-' + name) for name in ['old123', 'active123', 'unknown123', 'invalid123', 'ended123', 'expired123']]
+            valid, active, unknown, invalid, ended, expired = [parent / ('.soundflow-update-' + name) for name in ['old123', 'active123', 'unknown123', 'invalid123', 'ended123', 'expired123']]
             for directory in [valid, active, unknown, invalid, ended, expired]:
                 (directory / 'SoundFlow.app').mkdir(parents=True)
                 (directory / 'SoundFlow.app/valid-signature').write_text('signed')
@@ -253,7 +253,7 @@ phase=installed
         (resources / "runtime-manifest.json").write_text(json.dumps(MANIFEST), encoding="utf-8")
         with (contents / "Info.plist").open("wb") as target:
             plistlib.dump({
-                "CFBundleIdentifier": "studio.pymss.desktop",
+                "CFBundleIdentifier": "studio.soundflow.desktop",
                 "CFBundleShortVersionString": "1.2.3",
                 "CFBundleExecutable": "SoundFlow",
             }, target)

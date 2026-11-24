@@ -39,7 +39,7 @@ with sync_playwright() as playwright:
     errors = []
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.add_init_script('for(const [name,value] of Object.entries(' + json.dumps(fixtures) + ''')) {
-      const key='pymss-studio:'+name;
+      const key='soundflow:'+name;
       if(!localStorage.getItem(key)) localStorage.setItem(key,JSON.stringify(value));
     }''')
     page.goto(args.url + '/#/separate')
@@ -71,7 +71,7 @@ with sync_playwright() as playwright:
     expect(page.locator('.n-dialog')).to_contain_text('99 次运行记录')
     page.locator('.n-dialog').get_by_role('button', name='删除', exact=True).click()
     expect(queue.locator('.batch-queue-row')).to_have_count(0)
-    assert page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:task-history')).tasks.map(task=>task.id)") == ['task-100', 'task-101']
+    assert page.evaluate("JSON.parse(localStorage.getItem('soundflow:task-history')).tasks.map(task=>task.id)") == ['task-100', 'task-101']
     page.reload()
     page.wait_for_load_state('networkidle')
     queue = open_history()

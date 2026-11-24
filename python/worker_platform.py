@@ -1,6 +1,6 @@
 """Platform facts that do not depend on Windows Management Instrumentation.
 
-Adapted from upstream pymss-studio. ``platform.machine()`` on Windows can fall back
+Adapted from upstream soundflow. ``platform.machine()`` on Windows can fall back
 to a WMI query, which is slow and occasionally unavailable in restricted sessions;
 the architecture environment variables are already populated by the OS loader.
 """

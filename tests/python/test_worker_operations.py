@@ -151,7 +151,7 @@ class RunOperationTests(unittest.TestCase):
                 out_dir = work / "configured-output"
                 output = io.StringIO()
                 with (
-                    mock.patch.dict(os.environ, {"PYMSS_STUDIO_DEFAULT_OUTPUT_DIR": str(out_dir)}),
+                    mock.patch.dict(os.environ, {"SOUNDFLOW_DEFAULT_OUTPUT_DIR": str(out_dir)}),
                     redirect_stdout(output),
                 ):
                     code = worker_operations.cmd_run_operation({
@@ -213,8 +213,8 @@ class DescribeOperationCacheTests(unittest.TestCase):
             with (
                 mock.patch.dict(os.environ, {
                     "PYMSS_PLUGINS_DIR": str(directory),
-                    "PYMSS_STUDIO_RUNTIME_ENVS_DIR": str(work / "runtimes"),
-                    "PYMSS_STUDIO_ACTIVE_RUNTIME_FILE": str(work / "active.json"),
+                    "SOUNDFLOW_RUNTIME_ENVS_DIR": str(work / "runtimes"),
+                    "SOUNDFLOW_ACTIVE_RUNTIME_FILE": str(work / "active.json"),
                 }),
                 mock.patch.object(worker_plugins, "_root", return_value=work / "managed"),
             ):

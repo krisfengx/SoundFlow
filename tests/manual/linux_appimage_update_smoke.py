@@ -28,7 +28,7 @@ def main(image: Path, appdir: Path) -> None:
         for directory in (Path(), Path("usr/share/applications")):
             for desktop in (appdir / directory).glob("*.desktop"):
                 shutil.copyfile(desktop, miniature / directory / desktop.name)
-        probe = miniature / "usr/bin/pymss-studio"
+        probe = miniature / "usr/bin/soundflow"
         subprocess.run(["cc", "-x", "c", "-", "-o", str(probe)], check=True, input=r'''
 #include <fcntl.h>
 #include <stdio.h>
@@ -36,7 +36,7 @@ def main(image: Path, appdir: Path) -> None:
 #include <sys/stat.h>
 #include <unistd.h>
 int main(void) {
-    const char *value = getenv("PYMSS_STUDIO_INSTANCE_FD");
+    const char *value = getenv("SOUNDFLOW_INSTANCE_FD");
     if (!value) return 81;
     int fd = atoi(value), flags = fcntl(fd, F_GETFD);
     if (fd < 3 || flags < 0) return 82;
@@ -75,7 +75,7 @@ int main(void) {
                 "APPIMAGE", "APPDIR", "ARGV0", "APPIMAGE_EXTRACT_AND_RUN", "LD_LIBRARY_PATH",
             )}
             environment.update({
-                "TMPDIR": str(runtime_tmp), "PYMSS_STUDIO_INSTANCE_FD": str(lock.fileno()),
+                "TMPDIR": str(runtime_tmp), "SOUNDFLOW_INSTANCE_FD": str(lock.fileno()),
                 "PYMSS_APPIMAGE_PROBE_ACK": str(ack),
                 "PYMSS_APPIMAGE_PROBE_LOCK": str(root / f"{mode}.lock"),
             })

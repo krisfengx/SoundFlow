@@ -70,8 +70,8 @@ def _download_file_with_aria2_env(
 ) -> None:
     overrides = {}
     if getattr(pymss_download, "ARIA2C_PATH", None):
-        openssl_conf = os.environ.get("PYMSS_STUDIO_OPENSSL_CONF")
-        openssl_modules = os.environ.get("PYMSS_STUDIO_OPENSSL_MODULES")
+        openssl_conf = os.environ.get("SOUNDFLOW_OPENSSL_CONF")
+        openssl_modules = os.environ.get("SOUNDFLOW_OPENSSL_MODULES")
         if openssl_conf:
             overrides["OPENSSL_CONF"] = openssl_conf
         if openssl_modules:

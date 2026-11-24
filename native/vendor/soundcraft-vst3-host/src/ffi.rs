@@ -695,7 +695,7 @@ impl IHostApplicationTrait for HostContext {
         // SAFETY: the plugin passes a pointer to a writable String128 (or null, handled).
         match unsafe { name.as_mut() } {
             Some(n) => {
-                write_c16("Pymss Studio", n);
+                write_c16("SoundFlow", n);
                 sb::kResultOk
             }
             None => sb::kInvalidArgument,
@@ -2732,7 +2732,7 @@ mod tests {
             assert_eq!(h.getName(&mut name), sb::kResultOk);
             assert_eq!(h.restartComponent(sv::RestartFlags_::kLatencyChanged as i32), sb::kResultOk);
         }
-        assert_eq!(read_c16(&name), "Pymss Studio");
+        assert_eq!(read_c16(&name), "SoundFlow");
         assert!(h.latency_changed.load(Ordering::Relaxed));
         assert_eq!(hex(&[0xAB; 16]), "AB".repeat(16));
     }

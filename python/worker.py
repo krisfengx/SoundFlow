@@ -8,7 +8,7 @@ from worker_proxy import ProxyConfigError, configure_process_proxy, load_proxy_c
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="pymss-studio-worker")
+    parser = argparse.ArgumentParser(prog="soundflow-worker")
     parser.add_argument("command", nargs="?", default="health")
     parser.add_argument("--payload", help="JSON string or path to a JSON payload file")
     return parser.parse_args(argv[1:])
@@ -18,6 +18,9 @@ def run_command(command: str, payload: dict) -> int:
     if command == "runtime_info":
         from worker_bootstrap import cmd_runtime_info
         return cmd_runtime_info(payload)
+    if command == "migrate_runtime_envs":
+        from worker_bootstrap import cmd_migrate_runtime_envs
+        return cmd_migrate_runtime_envs(payload)
     if command == "install_runtime":
         configure_process_proxy(load_proxy_config())
         from worker_bootstrap import cmd_install_runtime

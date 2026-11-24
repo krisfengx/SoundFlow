@@ -214,7 +214,7 @@ class UserModelPathTests(unittest.TestCase):
         override = debug_dir / "model-configs" / "catalog_model.ckpt.yaml"
         override.parent.mkdir(parents=True)
         override.write_text("debug: true\n", encoding="utf-8")
-        with mock.patch.dict("os.environ", {"PYMSS_STUDIO_DEBUG_DIR": str(debug_dir)}):
+        with mock.patch.dict("os.environ", {"SOUNDFLOW_DEBUG_DIR": str(debug_dir)}):
             self.assertEqual(
                 worker_models.config_path_for(CATALOG_ENTRY, str(self.model_dir)),
                 self.model_dir / "vocals" / "catalog_model.yaml",

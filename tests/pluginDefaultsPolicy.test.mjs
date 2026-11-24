@@ -17,7 +17,7 @@ const vite = await createServer({
 })
 after(async () => { await vite.close(); await browser.happyDOM.close() })
 const { useSettingsStore } = await vite.ssrLoadModule('/src/stores/settings.ts')
-const key = 'pymss-studio:app-settings'
+const key = 'soundflow:app-settings'
 const persisted = () => JSON.parse(localStorage.getItem(key))
 const saved = () => new Promise(resolve => setTimeout(resolve, 160))
 

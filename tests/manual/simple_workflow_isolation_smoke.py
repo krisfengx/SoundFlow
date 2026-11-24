@@ -45,9 +45,9 @@ with tempfile.TemporaryDirectory(prefix='pymss-isolation-') as temporary, sync_p
     page.set_default_timeout(8000)
     errors = []
     page.on('pageerror', lambda error: errors.append(str(error)))
-    page.add_init_script('localStorage.setItem("pymss-studio:app-settings", JSON.stringify(' + json.dumps({
+    page.add_init_script('localStorage.setItem("soundflow:app-settings", JSON.stringify(' + json.dumps({
         'startupOnboardingSeen': True, 'locale': 'zh-CN', 'defaultDevice': 'cpu', 'outputDir': str(blocked),
-    }) + ')); localStorage.setItem("pymss-studio:workflow-state", JSON.stringify(' + json.dumps(workflows) + '));')
+    }) + ')); localStorage.setItem("soundflow:workflow-state", JSON.stringify(' + json.dumps(workflows) + '));')
     page.goto(args.url + '/#/workflows')
     page.wait_for_load_state('networkidle')
     page.wait_for_function("document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('task').initialized")
@@ -61,8 +61,8 @@ with tempfile.TemporaryDirectory(prefix='pymss-isolation-') as temporary, sync_p
           if (command === 'start_workflow_inference' || command === 'start_separation') {
             window.__requests.push(JSON.parse(JSON.stringify(args.payload))); return {taskId: args.payload.taskId, started: true};
           }
-          if (command === 'save_app_store') {localStorage.setItem('pymss-studio:' + args.name, JSON.stringify(args.data)); return;}
-          if (command === 'load_app_store') return JSON.parse(localStorage.getItem('pymss-studio:' + args.name) || 'null');
+          if (command === 'save_app_store') {localStorage.setItem('soundflow:' + args.name, JSON.stringify(args.data)); return;}
+          if (command === 'load_app_store') return JSON.parse(localStorage.getItem('soundflow:' + args.name) || 'null');
           if (command.startsWith('plugin:')) return 1;
           return null;
         },

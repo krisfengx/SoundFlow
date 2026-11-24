@@ -14,18 +14,24 @@ use std::os::windows::ffi::OsStrExt;
 #[cfg(windows)]
 use windows_sys::Win32::Storage::FileSystem::ReplaceFileW;
 
-const DATA_ROOT_ENV: &str = "PYMSS_STUDIO_DATA_ROOT";
+const DATA_ROOT_ENV: &str = "SOUNDFLOW_DATA_ROOT";
 // Explicit override for the managed runtime environments directory. When set,
 // it wins over every built-in default (useful for portable/CI layouts).
-const RUNTIME_ENVS_OVERRIDE_ENV: &str = "PYMSS_STUDIO_RUNTIME_ENVS_OVERRIDE";
-const DATA_ROOT_DIR_NAME: &str = ".pymss-studio";
-const LOCAL_DATA_ROOT_DIR_NAME: &str = "data";
+const RUNTIME_ENVS_OVERRIDE_ENV: &str = "SOUNDFLOW_RUNTIME_ENVS_OVERRIDE";
+const DATA_ROOT_DIR_NAME: &str = ".soundflow";
+/// Older releases kept development/portable data in a plain `data/` folder and
+/// packaged data in `~/.soundflow`. Both remain readable as legacy fallbacks.
+const LEGACY_LOCAL_DATA_ROOT_DIR_NAME: &str = "data";
 static JSON_WRITE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 // Multiple WebView windows can autosave the same store at once. Serialize the temporary-file
 // replacement in the Rust process so a second writer never races the first ReplaceFileW call.
 static JSON_WRITE_LOCK: Mutex<()> = Mutex::new(());
 #[cfg(windows)]
-const PORTABLE_MARKER_FILE_NAME: &str = "pymss-studio.portable";
+const PORTABLE_MARKER_FILE_NAME: &str = "soundflow.portable";
+/// Pointer written outside the data root so changing the root cannot relocate
+/// the file that tells the app where the root is.
+const DATA_ROOT_POINTER_FILE_NAME: &str = "soundflow-root.json";
+const DATA_ROOT_POINTER_KEY: &str = "dataRoot";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -45,8 +51,17 @@ pub fn home_dir(app: &AppHandle) -> AppResult<PathBuf> {
         .map_err(|error| AppError::Worker(error.to_string()))
 }
 
-fn legacy_data_root_dir(app: &AppHandle) -> AppResult<PathBuf> {
-    Ok(home_dir(app)?.join(DATA_ROOT_DIR_NAME))
+fn executable_dir() -> AppResult<PathBuf> {
+    std::env::current_exe()?
+        .parent()
+        .map(PathBuf::from)
+        .ok_or_else(|| AppError::Worker("failed to resolve executable directory".into()))
+}
+
+fn packaged_data_root_dir(_app: &AppHandle) -> AppResult<PathBuf> {
+    // Application-owned data belongs next to the installed executable, not in
+    // the user profile. A legacy home-directory root is adopted below.
+    Ok(executable_dir()?.join(DATA_ROOT_DIR_NAME))
 }
 
 fn development_data_root_dir() -> AppResult<PathBuf> {
@@ -54,21 +69,46 @@ fn development_data_root_dir() -> AppResult<PathBuf> {
     let project_root = manifest_dir
         .parent()
         .ok_or_else(|| AppError::Worker("failed to resolve project root".into()))?;
-    Ok(project_root.join(LOCAL_DATA_ROOT_DIR_NAME))
+    Ok(project_root.join(DATA_ROOT_DIR_NAME))
 }
 
 fn portable_data_root_dir() -> AppResult<Option<PathBuf>> {
     #[cfg(windows)]
     {
-        let exe = std::env::current_exe()?;
-        let exe_dir = exe
-            .parent()
-            .ok_or_else(|| AppError::Worker("failed to resolve executable directory".into()))?;
+        let exe_dir = executable_dir()?;
         if exe_dir.join(PORTABLE_MARKER_FILE_NAME).exists() {
-            return Ok(Some(exe_dir.join(LOCAL_DATA_ROOT_DIR_NAME)));
+            return Ok(Some(exe_dir.join(DATA_ROOT_DIR_NAME)));
         }
     }
     Ok(None)
+}
+
+fn data_root_has_user_models(root: &Path) -> bool {
+    let Ok(entries) = std::fs::read_dir(root.join("models")) else {
+        return false;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name != "_cache" {
+            return true;
+        }
+    }
+    false
+}
+
+fn legacy_data_root_dir(app: &AppHandle, development: bool) -> Option<PathBuf> {
+    let candidates = if development {
+        vec![PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()?
+            .join(LEGACY_LOCAL_DATA_ROOT_DIR_NAME)]
+    } else {
+        let exe_dir = executable_dir().ok()?;
+        vec![
+            exe_dir.join(LEGACY_LOCAL_DATA_ROOT_DIR_NAME),
+            home_dir(app).ok()?.join(DATA_ROOT_DIR_NAME),
+        ]
+    };
+    candidates.into_iter().find(|path| path.is_dir())
 }
 
 fn is_cargo_profile_executable(exe: &Path, target_dir: &Path) -> bool {
@@ -117,17 +157,274 @@ fn resolve_data_root(
     legacy_root
 }
 
+fn data_root_pointer_path(app: &AppHandle) -> AppResult<PathBuf> {
+    #[cfg(windows)]
+    if let Some(portable) = portable_data_root_dir()? {
+        let _ = portable;
+        if let Ok(exe) = std::env::current_exe() {
+            if let Some(exe_dir) = exe.parent() {
+                return Ok(exe_dir.join(DATA_ROOT_POINTER_FILE_NAME));
+            }
+        }
+    }
+    if is_development_executable() {
+        let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .ok_or_else(|| AppError::Worker("failed to resolve project root".into()))?
+            .to_path_buf();
+        return Ok(project_root.join(DATA_ROOT_POINTER_FILE_NAME));
+    }
+    Ok(home_dir(app)?.join(DATA_ROOT_POINTER_FILE_NAME))
+}
+
+fn path_from_data_root_pointer(value: &Value) -> Option<PathBuf> {
+    let raw = value.get(DATA_ROOT_POINTER_KEY)?.as_str()?.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    let path = PathBuf::from(raw);
+    path.is_absolute().then_some(path)
+}
+
+fn configured_data_root_from_pointer(app: &AppHandle) -> Option<PathBuf> {
+    let path = data_root_pointer_path(app).ok()?;
+    let text = std::fs::read_to_string(path).ok()?;
+    let value: Value = serde_json::from_str(&text).ok()?;
+    let root = path_from_data_root_pointer(&value)?;
+    root.is_dir().then_some(root)
+}
+
 pub fn data_root_dir(app: &AppHandle) -> AppResult<PathBuf> {
     let env_root = std::env::var_os(DATA_ROOT_ENV)
         .filter(|value| !value.is_empty())
         .map(PathBuf::from);
-    Ok(resolve_data_root(
+    // An explicit environment override always wins. Otherwise a pointer written
+    // outside the data root takes precedence over every built-in default.
+    if env_root.is_none() {
+        if let Some(root) = configured_data_root_from_pointer(app) {
+            return Ok(root);
+        }
+    }
+    let development = is_development_executable();
+    let default_root = resolve_data_root(
         env_root,
         development_data_root_dir()?,
         portable_data_root_dir()?,
-        legacy_data_root_dir(app)?,
-        is_development_executable(),
-    ))
+        packaged_data_root_dir(app)?,
+        development,
+    );
+    // A freshly pre-created empty directory is not a real data root: dev-env
+    // may create `.soundflow/models/_cache` before the app ever writes state.
+    // Adopt the old root when the default has no settings store yet.
+    let default_has_state = default_root.join("settings").join("app.json").is_file()
+        && data_root_has_user_models(&default_root);
+    if !default_has_state {
+        if let Some(legacy) = legacy_data_root_dir(app, development) {
+            if legacy.join("settings").join("app.json").is_file() && data_root_has_user_models(&legacy) {
+                return Ok(legacy);
+            }
+        }
+    }
+    Ok(default_root)
+}
+
+fn move_data_root_entry(source: &Path, destination: &Path) -> AppResult<()> {
+    match std::fs::rename(source, destination) {
+        Ok(()) => return Ok(()),
+        Err(error) => {
+            // Windows ERROR_NOT_SAME_DEVICE / Unix EXDEV: copy tree then remove source.
+            if !matches!(error.raw_os_error(), Some(17 | 18)) {
+                return Err(error.into());
+            }
+        }
+    }
+    if source.is_dir() {
+        std::fs::create_dir_all(destination)?;
+        for entry in std::fs::read_dir(source)? {
+            let entry = entry?;
+            move_data_root_entry(&entry.path(), &destination.join(entry.file_name()))?;
+        }
+        std::fs::remove_dir(source)?;
+    } else {
+        std::fs::copy(source, destination)?;
+        std::fs::remove_file(source)?;
+    }
+    Ok(())
+}
+
+/// Move the whole application data root to a user-chosen directory.
+///
+/// The pointer lives outside the root (project root in dev, exe dir for portable
+/// builds, home dir otherwise), so the file telling the app where the root is
+/// never moved. The change takes effect on the next launch; the frontend must
+/// tell the user to restart.
+fn display_root(path: &Path) -> String {
+    let text = path.to_string_lossy().to_string();
+    let text = text.strip_prefix(r"\\?\").unwrap_or(&text);
+    if cfg!(windows) {
+        text.replace('/', "\\")
+    } else {
+        text.to_string()
+    }
+}
+
+fn rewrite_json_paths(value: &mut Value, old_root: &str, new_root: &str) {
+    let normalize = |text: &str| {
+        if cfg!(windows) { text.replace('/', "\\") } else { text.to_string() }
+    };
+    let old_root = normalize(old_root);
+    let new_root = normalize(new_root);
+    match value {
+        Value::String(text) => {
+            let normalized = normalize(text);
+            if normalized == old_root {
+                *text = new_root.clone();
+            } else if let Some(rest) = normalized.strip_prefix(&old_root) {
+                if rest.starts_with('\\') || rest.starts_with('/') {
+                    *text = format!("{new_root}{rest}");
+                }
+            }
+        }
+        Value::Array(items) => {
+            for item in items {
+                rewrite_json_paths(item, &old_root, &new_root);
+            }
+        }
+        Value::Object(entries) => {
+            for entry in entries.values_mut() {
+                rewrite_json_paths(entry, &old_root, &new_root);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn rewrite_settings_paths(settings_dir: &Path, old_root: &str, new_root: &str) -> AppResult<()> {
+    if !settings_dir.is_dir() {
+        return Ok(());
+    }
+    for entry in std::fs::read_dir(settings_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if !path.is_file() || path.extension().and_then(|value| value.to_str()) != Some("json") {
+            continue;
+        }
+        let mut value: Value = serde_json::from_slice(&std::fs::read(&path)?)?;
+        rewrite_json_paths(&mut value, old_root, new_root);
+        write_json_file(&path, &value)?;
+    }
+    Ok(())
+}
+
+fn path_contains_files(path: &Path) -> AppResult<bool> {
+    if path.is_file() {
+        return Ok(true);
+    }
+    for entry in std::fs::read_dir(path)? {
+        if path_contains_files(&entry?.path())? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+fn prepare_data_root_target(target: &Path) -> AppResult<()> {
+    if !target.exists() {
+        std::fs::create_dir_all(target)?;
+        return Ok(());
+    }
+    if !target.is_dir() {
+        return Err(AppError::Worker("target is not a directory".into()));
+    }
+    let allowed = ["models", "plugins", "temp"];
+    for entry in std::fs::read_dir(target)? {
+        let entry = entry?;
+        let name = entry.file_name().to_string_lossy().to_string();
+        if !entry.path().is_dir() || !allowed.contains(&name.as_str()) || path_contains_files(&entry.path())? {
+            return Err(AppError::Worker("target directory must be empty or contain only empty app cache directories".into()));
+        }
+    }
+    // Dev scripts pre-create empty cache directories; clear them so the move
+    // below sees an empty target.
+    for entry in std::fs::read_dir(target)? {
+        std::fs::remove_dir_all(entry?.path())?;
+    }
+    Ok(())
+}
+
+fn migrate_data_root_paths(current: &Path, target_raw: &str, pointer: &Path) -> AppResult<Value> {
+    let target = PathBuf::from(target_raw.trim());
+    if !target.is_absolute() {
+        return Err(AppError::Worker("data root must be an absolute path".into()));
+    }
+    prepare_data_root_target(&target)?;
+    let target = std::fs::canonicalize(&target)?;
+    let current = std::fs::canonicalize(current)?;
+    if current == target {
+        return Ok(serde_json::json!({ "dataRoot": display_root(&target), "moved": [], "skipped": [] }));
+    }
+    if target.starts_with(&current) {
+        return Err(AppError::Worker("target cannot be inside the current data root".into()));
+    }
+    if !current.is_dir() {
+        return Err(AppError::Worker("current data root does not exist".into()));
+    }
+
+    let mut moved = Vec::new();
+    for entry in std::fs::read_dir(&current)? {
+        let entry = entry?;
+        let name = entry.file_name().to_string_lossy().to_string();
+        // Logs and temp files may still be open in this process; leaving them
+        // behind is safer than failing the whole migration on a sharing lock.
+        if name == "logs" || name == "temp" {
+            continue;
+        }
+        let destination = target.join(entry.file_name());
+        if destination.exists() {
+            return Err(AppError::Worker(format!("target already contains {name}")));
+        }
+        let source = entry.path();
+        move_data_root_entry(&source, &destination).map_err(|error| {
+            AppError::Worker(format!(
+                "failed to move {} -> {}: {error}",
+                display_root(&source),
+                display_root(&destination)
+            ))
+        })?;
+        moved.push(name);
+    }
+
+    // Settings such as modelDir/outputDir are absolute and may point inside
+    // the old data root; rewrite them before the pointer makes the new root live.
+    rewrite_settings_paths(
+        &target.join("settings"),
+        &display_root(&current),
+        &display_root(&target),
+    )
+    .map_err(|error| AppError::Worker(format!("failed to rewrite migrated settings: {error}")))?;
+
+    if let Some(parent) = pointer.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    write_json_file(pointer, &serde_json::json!({ DATA_ROOT_POINTER_KEY: display_root(&target) }))
+        .map_err(|error| AppError::Worker(format!("failed to write {}: {error}", pointer.display())))?;
+    Ok(serde_json::json!({
+        "dataRoot": display_root(&target),
+        "moved": moved,
+        "skipped": ["logs", "temp"],
+    }))
+}
+
+/// Move the whole application data root to a user-chosen directory.
+///
+/// The pointer lives outside the root (project root in dev, exe dir for portable
+/// builds, home dir otherwise), so the file telling the app where the root is
+/// never moved. The change takes effect on the next launch; the frontend must
+/// tell the user to restart.
+pub fn migrate_data_root(app: &AppHandle, target_raw: &str) -> AppResult<Value> {
+    let current = data_root_dir(app)?;
+    let pointer = data_root_pointer_path(app)?;
+    migrate_data_root_paths(&current, target_raw, &pointer)
 }
 
 pub fn settings_dir(app: &AppHandle) -> AppResult<PathBuf> {
@@ -136,6 +433,98 @@ pub fn settings_dir(app: &AppHandle) -> AppResult<PathBuf> {
 
 pub fn models_dir(app: &AppHandle) -> AppResult<PathBuf> {
     Ok(data_root_dir(app)?.join("models"))
+}
+
+/// Third-party libraries may materialise model weights in their own caches.
+/// Keep all three caches inside the app model root in every distribution.
+fn model_cache_paths(models: &Path) -> [PathBuf; 3] {
+    let root = models.join("_cache");
+    [
+        root.join("hf"),
+        root.join("torch"),
+        root.join("modelscope"),
+    ]
+}
+
+pub fn model_cache_dirs(app: &AppHandle) -> AppResult<[PathBuf; 3]> {
+    Ok(model_cache_paths_from_root(&model_cache_root(app)?))
+}
+
+fn model_cache_dir_from_settings(value: &Value) -> Option<PathBuf> {
+    let raw = value.get("modelCacheDir")?.as_str()?.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    let path = PathBuf::from(raw);
+    path.is_absolute().then_some(path)
+}
+
+pub fn configured_model_cache_dir(app: &AppHandle) -> Option<PathBuf> {
+    // Read the store file directly: `read_app_store` calls
+    // `ensure_app_directories`, which in turn calls `model_cache_dirs`.
+    let path = app_store_path(app, "app-settings").ok()?;
+    let text = std::fs::read_to_string(path).ok()?;
+    let value: Value = serde_json::from_str(&text).ok()?;
+    model_cache_dir_from_settings(&value)
+}
+
+pub fn model_cache_root(app: &AppHandle) -> AppResult<PathBuf> {
+    if let Some(root) = configured_model_cache_dir(app) {
+        return Ok(root);
+    }
+    Ok(models_dir(app)?.join("_cache"))
+}
+
+fn model_cache_paths_from_root(root: &Path) -> [PathBuf; 3] {
+    [
+        root.join("hf"),
+        root.join("torch"),
+        root.join("modelscope"),
+    ]
+}
+
+pub fn set_model_cache_dir(app: &AppHandle, path: &Path) -> AppResult<()> {
+    let mut settings = read_app_store(app, "app-settings")?;
+    if !settings.is_object() {
+        settings = serde_json::json!({});
+    }
+    settings["modelCacheDir"] = serde_json::json!(display_root(path));
+    write_json_file(&app_store_path(app, "app-settings")?, &settings)
+}
+
+pub fn migrate_model_cache_dir(app: &AppHandle, target_raw: &str) -> AppResult<Value> {
+    let target = PathBuf::from(target_raw.trim());
+    if !target.is_absolute() {
+        return Err(AppError::Worker("model cache directory must be absolute".into()));
+    }
+    if target.exists() {
+        if !target.is_dir() || path_contains_files(&target)? {
+            return Err(AppError::Worker("target directory must be empty".into()));
+        }
+    }
+    std::fs::create_dir_all(&target)?;
+    let target = std::fs::canonicalize(&target)?;
+    let current = model_cache_root(app)?;
+    if std::fs::canonicalize(&current).ok().as_deref() == Some(target.as_path()) {
+        return Ok(serde_json::json!({ "modelCacheDir": display_root(&target), "moved": [] }));
+    }
+    let mut moved = Vec::new();
+    for name in ["hf", "torch", "modelscope"] {
+        let source = current.join(name);
+        if !source.exists() {
+            continue;
+        }
+        let destination = target.join(name);
+        move_data_root_entry(&source, &destination).map_err(|error| {
+            AppError::Worker(format!("failed to move {}: {error}", source.display()))
+        })?;
+        moved.push(name);
+    }
+    set_model_cache_dir(app, &target)?;
+    Ok(serde_json::json!({
+        "modelCacheDir": display_root(&target),
+        "moved": moved,
+    }))
 }
 
 pub fn outputs_dir(app: &AppHandle) -> AppResult<PathBuf> {
@@ -220,6 +609,22 @@ fn development_runtime_envs_dir() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from(".venv/python/runtime-envs"))
 }
 
+/// Directory chosen by the user in Settings → Data directories. Stored in the
+/// same `app-settings` JSON as `modelDir`, so the Rust process and the Python
+/// worker always resolve the runtime root from one source of truth.
+fn runtime_envs_dir_from_settings(value: &Value) -> Option<PathBuf> {
+    let raw = value.get("runtimeEnvsDir")?.as_str()?.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    let path = PathBuf::from(raw);
+    path.is_absolute().then_some(path)
+}
+
+fn configured_runtime_envs_dir(app: &AppHandle) -> Option<PathBuf> {
+    runtime_envs_dir_from_settings(&read_app_store(app, "app-settings").ok()?)
+}
+
 pub fn runtime_envs_dir(app: &AppHandle) -> AppResult<PathBuf> {
     // 1. Explicit override (portable builds, CI, custom layouts).
     if let Some(dir) = std::env::var_os(RUNTIME_ENVS_OVERRIDE_ENV)
@@ -228,25 +633,46 @@ pub fn runtime_envs_dir(app: &AppHandle) -> AppResult<PathBuf> {
     {
         return Ok(dir);
     }
-    // 2. Keep PYMSS_STUDIO_DATA_ROOT semantics: a custom data root owns runtimes too.
+    // 2. User-configured directory (winner over built-in defaults).
+    if let Some(dir) = configured_runtime_envs_dir(app) {
+        return Ok(dir);
+    }
+    // 3. Keep SOUNDFLOW_DATA_ROOT semantics: a custom data root owns runtimes too.
     if let Some(root) = std::env::var_os(DATA_ROOT_ENV)
         .filter(|value| !value.is_empty())
         .map(PathBuf::from)
     {
         return Ok(root.join("runtime-envs"));
     }
-    // 3. Development builds: project-local, persistent location.
+    // 4. Development builds: project-local, persistent location.
     if is_development_executable() {
         return Ok(development_runtime_envs_dir());
     }
-    // 4. Packaged builds: unchanged upstream behaviour.
+    // 5. Packaged builds on Unix keep the data-root layout.
     #[cfg(any(feature = "vst-lab", target_os = "macos", target_os = "linux"))]
     {
         Ok(data_root_dir(app)?.join("runtime-envs"))
     }
+    // 6. Windows packages: keep managed environments in an install-local
+    //    `.venv`, matching the development layout. Existing installs that
+    //    already have environments under python-runtime/ or the data root are
+    //    adopted so an upgrade never hides them.
     #[cfg(not(any(feature = "vst-lab", target_os = "macos", target_os = "linux")))]
     {
-        Ok(runtime_root_dir(app)?.join("runtime-envs"))
+        let exe_dir = executable_dir()?;
+        let default = exe_dir.join(".venv").join("python").join("runtime-envs");
+        if default.exists() {
+            return Ok(default);
+        }
+        let legacy_bundled = exe_dir.join("python-runtime").join("runtime-envs");
+        if legacy_bundled.is_dir() {
+            return Ok(legacy_bundled);
+        }
+        let legacy_data = data_root_dir(app)?.join("runtime-envs");
+        if legacy_data.is_dir() {
+            return Ok(legacy_data);
+        }
+        Ok(default)
     }
 }
 
@@ -275,19 +701,23 @@ pub fn ensure_app_directories(app: &AppHandle) -> AppResult<()> {
     ] {
         std::fs::create_dir_all(dir)?;
     }
+    for dir in model_cache_dirs(app)? {
+        std::fs::create_dir_all(dir)?;
+    }
+    std::fs::create_dir_all(data_root_dir(app)?.join("plugins"))?;
     Ok(())
 }
 
 pub fn app_paths_payload(app: &AppHandle) -> AppResult<AppPathsPayload> {
     ensure_app_directories(app)?;
     Ok(AppPathsPayload {
-        data_root: data_root_dir(app)?.to_string_lossy().to_string(),
-        settings_dir: settings_dir(app)?.to_string_lossy().to_string(),
-        models_dir: models_dir(app)?.to_string_lossy().to_string(),
-        outputs_dir: outputs_dir(app)?.to_string_lossy().to_string(),
-        editor_projects_dir: editor_projects_dir(app)?.to_string_lossy().to_string(),
-        logs_dir: logs_dir(app)?.to_string_lossy().to_string(),
-        temp_dir: temp_dir(app)?.to_string_lossy().to_string(),
+        data_root: display_root(&data_root_dir(app)?),
+        settings_dir: display_root(&settings_dir(app)?),
+        models_dir: display_root(&models_dir(app)?),
+        outputs_dir: display_root(&outputs_dir(app)?),
+        editor_projects_dir: display_root(&editor_projects_dir(app)?),
+        logs_dir: display_root(&logs_dir(app)?),
+        temp_dir: display_root(&temp_dir(app)?),
     })
 }
 
@@ -779,10 +1209,11 @@ fn replace_file(temporary: &Path, destination: &Path) -> AppResult<()> {
 #[cfg(test)]
 mod tests {
     use super::{
-        apply_workflow_mutation, resolve_data_root, store_file_name, write_json_file,
-        JSON_WRITE_SEQUENCE,
+        apply_workflow_mutation, data_root_has_user_models, display_root, migrate_data_root_paths,
+        model_cache_paths, move_data_root_entry, path_from_data_root_pointer, resolve_data_root,
+        runtime_envs_dir_from_settings, store_file_name, write_json_file, JSON_WRITE_SEQUENCE,
     };
-    use serde_json::json;
+    use serde_json::{json, Value};
     use std::path::PathBuf;
     use std::sync::atomic::Ordering;
 
@@ -1459,9 +1890,160 @@ mod tests {
     }
 
     #[test]
-    fn release_without_portable_marker_uses_legacy_data() {
-        let root = resolve_data_root(None, path("dev-data"), None, path("legacy-data"), false);
+    fn release_without_portable_marker_uses_packaged_data() {
+        let root = resolve_data_root(None, path("dev-data"), None, path("packaged-data"), false);
 
-        assert_eq!(root, path("legacy-data"));
+        assert_eq!(root, path("packaged-data"));
     }
+
+    #[test]
+    fn configured_runtime_dir_must_be_absolute() {
+        let absolute = std::env::temp_dir().join("soundflow-runtimes");
+        let raw = absolute.to_string_lossy().to_string();
+        assert_eq!(
+            runtime_envs_dir_from_settings(&serde_json::json!({ "runtimeEnvsDir": raw })),
+            Some(absolute)
+        );
+        assert_eq!(
+            runtime_envs_dir_from_settings(&serde_json::json!({ "runtimeEnvsDir": "relative" })),
+            None
+        );
+        assert_eq!(
+            runtime_envs_dir_from_settings(&serde_json::json!({ "runtimeEnvsDir": "  " })),
+            None
+        );
+        assert_eq!(runtime_envs_dir_from_settings(&serde_json::json!({})), None);
+    }
+
+    #[test]
+    fn data_root_pointer_requires_an_absolute_path() {
+        let absolute = std::env::temp_dir().join("soundflow-data");
+        let raw = absolute.to_string_lossy().to_string();
+        assert_eq!(
+            path_from_data_root_pointer(&serde_json::json!({ "dataRoot": raw })),
+            Some(absolute)
+        );
+        assert_eq!(
+            path_from_data_root_pointer(&serde_json::json!({ "dataRoot": "relative" })),
+            None
+        );
+        assert_eq!(path_from_data_root_pointer(&serde_json::json!({})), None);
+    }
+
+    #[test]
+    fn data_root_entry_move_preserves_nested_files() {
+        let base = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("_debug_output/tmp/data-root-move-tests");
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let case = base.join(format!("{}-{}", std::process::id(), stamp));
+        let source = case.join("source");
+        let destination = case.join("destination");
+        std::fs::create_dir_all(source.join("nested")).unwrap();
+        std::fs::write(source.join("file.txt"), b"root").unwrap();
+        std::fs::write(source.join("nested/child.txt"), b"child").unwrap();
+
+        move_data_root_entry(&source, &destination).unwrap();
+
+        assert_eq!(std::fs::read(destination.join("file.txt")).unwrap(), b"root");
+        assert_eq!(std::fs::read(destination.join("nested/child.txt")).unwrap(), b"child");
+        assert!(!source.exists());
+        std::fs::remove_dir_all(case).ok();
+    }
+
+    #[test]
+    fn data_root_migration_writes_pointer_and_keeps_old_logs() {
+        let base = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("_debug_output/tmp/data-root-migrate-tests");
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let case = base.join(format!("{}-{}", std::process::id(), stamp));
+        let current = case.join("current");
+        let target = case.join("target");
+        std::fs::create_dir_all(current.join("models")).unwrap();
+        std::fs::create_dir_all(current.join("settings")).unwrap();
+        std::fs::create_dir_all(current.join("logs")).unwrap();
+        std::fs::create_dir_all(current.join("temp")).unwrap();
+        std::fs::write(current.join("models/model.bin"), b"model").unwrap();
+        let old_settings = serde_json::json!({
+            "modelDir": current.join("models").to_string_lossy(),
+            "outputDir": current.join("outputs").to_string_lossy(),
+        });
+        write_json_file(&current.join("settings/app.json"), &old_settings).unwrap();
+        std::fs::write(current.join("logs/session.log"), b"log").unwrap();
+        std::fs::write(current.join("temp/scratch.bin"), b"tmp").unwrap();
+        let pointer = case.join("soundflow-root.json");
+
+        let result = migrate_data_root_paths(
+            &current,
+            &display_root(&target),
+            &pointer,
+        )
+        .unwrap();
+
+        assert!(target.join("models/model.bin").is_file());
+        assert!(target.join("settings/app.json").is_file());
+        let migrated_settings: Value =
+            serde_json::from_slice(&std::fs::read(target.join("settings/app.json")).unwrap()).unwrap();
+        let expected_model = target.join("models").to_string_lossy().replace('/', "\\");
+        let expected_output = target.join("outputs").to_string_lossy().replace('/', "\\");
+        assert_eq!(migrated_settings.get("modelDir").and_then(Value::as_str), Some(expected_model.as_str()));
+        assert_eq!(migrated_settings.get("outputDir").and_then(Value::as_str), Some(expected_output.as_str()));
+        assert!(!target.join("logs").exists());
+        assert!(!target.join("temp").exists());
+        assert!(current.join("logs/session.log").is_file());
+        assert!(current.join("temp/scratch.bin").is_file());
+        let written: Value = serde_json::from_slice(&std::fs::read(&pointer).unwrap()).unwrap();
+        assert_eq!(written.get("dataRoot").and_then(Value::as_str), result.get("dataRoot").and_then(Value::as_str));
+        std::fs::remove_dir_all(case).ok();
+    }
+
+    #[test]
+    fn display_root_uses_native_separators() {
+        let raw = "E:/base/.soundflow/models/_cache";
+        let separator = char::from(92u8).to_string();
+        let shown = display_root(&PathBuf::from(raw));
+        #[cfg(windows)]
+        assert_eq!(shown, raw.replace('/', &separator));
+        #[cfg(not(windows))]
+        assert_eq!(shown, raw);
+    }
+
+    #[test]
+    fn empty_cache_root_does_not_count_as_user_models() {
+        let base = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("_debug_output/tmp/data-root-adoption-tests");
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let case = base.join(format!("{}-{}", std::process::id(), stamp));
+        let empty = case.join("empty");
+        let real = case.join("real");
+        std::fs::create_dir_all(empty.join("models/_cache/hf")).unwrap();
+        std::fs::create_dir_all(real.join("models/_tool_models")).unwrap();
+        assert!(!data_root_has_user_models(&empty));
+        assert!(data_root_has_user_models(&real));
+        std::fs::remove_dir_all(case).ok();
+    }
+
+    #[test]
+    fn model_cache_paths_stay_inside_the_model_root() {
+        let models = path("data/models");
+        let caches = model_cache_paths(&models);
+        assert_eq!(caches[0], models.join("_cache/hf"));
+        assert_eq!(caches[1], models.join("_cache/torch"));
+        assert_eq!(caches[2], models.join("_cache/modelscope"));
+    }
+
 }

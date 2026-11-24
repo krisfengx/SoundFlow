@@ -179,12 +179,12 @@ pub fn run_capabilities_cli() -> Option<i32> {
 /// Establish lab storage before logging, recovery, or Tauri initializes.
 pub fn configure_lab_environment() {
     #[cfg(feature = "vst-lab")]
-    if std::env::var_os("PYMSS_STUDIO_DATA_ROOT").is_none_or(|value| value.is_empty()) {
+    if std::env::var_os("SOUNDFLOW_DATA_ROOT").is_none_or(|value| value.is_empty()) {
         let root = Path::new(env!("CARGO_MANIFEST_DIR"))
             .parent()
             .expect("the application manifest has a project parent")
             .join("data-vst-lab");
-        std::env::set_var("PYMSS_STUDIO_DATA_ROOT", root);
+        std::env::set_var("SOUNDFLOW_DATA_ROOT", root);
     }
 }
 

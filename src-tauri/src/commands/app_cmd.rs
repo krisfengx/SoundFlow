@@ -582,6 +582,56 @@ pub async fn runtime_info(app: AppHandle, payload: Option<Value>) -> AppResult<V
     run_worker_with_payload(&app, "runtime_info", payload)
 }
 
+/// Move the managed inference environments to a user-chosen directory.
+///
+/// The worker still sees the OLD root through `SOUNDFLOW_RUNTIME_ENVS_DIR`: the
+/// frontend only persists `runtimeEnvsDir` after this command succeeds. The
+/// worker rewrites pyvenv.cfg / launchers / active-runtime.json while moving.
+#[tauri::command]
+pub async fn migrate_runtime_envs(app: AppHandle, payload: Value) -> AppResult<Value> {
+    let target = payload
+        .get("targetDir")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| AppError::Worker("missing runtime environment directory".into()))?;
+    let path = PathBuf::from(target);
+    if !path.is_absolute() {
+        return Err(AppError::Worker("runtime environment directory must be absolute".into()));
+    }
+    run_worker_with_payload(
+        &app,
+        "migrate_runtime_envs",
+        Some(serde_json::json!({ "targetDir": path.to_string_lossy() })),
+    )
+}
+
+/// Move the application data root to a user-chosen directory. Takes effect on
+/// the next launch because the pointer is read before any store is loaded.
+#[tauri::command]
+pub async fn migrate_data_root(app: AppHandle, payload: Value) -> AppResult<Value> {
+    let target = payload
+        .get("targetDir")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| AppError::Worker("missing data root directory".into()))?;
+    storage::migrate_data_root(&app, target)
+}
+
+/// Move the HuggingFace / torch.hub / ModelScope weight caches to a user-chosen
+/// directory and persist the choice in app-settings.
+#[tauri::command]
+pub async fn migrate_model_cache_dir(app: AppHandle, payload: Value) -> AppResult<Value> {
+    let target = payload
+        .get("targetDir")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| AppError::Worker("missing model cache directory".into()))?;
+    storage::migrate_model_cache_dir(&app, target)
+}
+
 #[tauri::command]
 pub async fn runtime_env_sizes(app: AppHandle) -> AppResult<Value> {
     run_worker_with_payload(&app, "runtime_env_sizes", None)
@@ -1544,6 +1594,24 @@ pub async fn close_current_window(window: tauri::WebviewWindow) -> AppResult<()>
     window
         .destroy()
         .map_err(|error| AppError::Worker(error.to_string()))
+}
+
+/// Hide the main window into the tray without cancelling background work.
+#[tauri::command]
+pub async fn hide_main_window(app: AppHandle) -> AppResult<()> {
+    let window = app
+        .get_webview_window("main")
+        .ok_or_else(|| AppError::Worker("main window is unavailable".into()))?;
+    window
+        .hide()
+        .map_err(|error| AppError::Worker(error.to_string()))
+}
+
+/// Full shutdown. The `RunEvent::Exit` handler performs the worker cleanup.
+#[tauri::command]
+pub async fn quit_application(app: AppHandle) -> AppResult<()> {
+    app.exit(0);
+    Ok(())
 }
 
 #[tauri::command]
@@ -3703,13 +3771,35 @@ fn resolve_reveal_path(app: &AppHandle, path: &str) -> AppResult<PathBuf> {
     }
 
     // Worker output paths may be entered as a relative directory. Keep this
-    // resolution identical to the worker's PYMSS_STUDIO_DEFAULT_OUTPUT_DIR
+    // resolution identical to the worker's SOUNDFLOW_DEFAULT_OUTPUT_DIR
     // handling so Explorer opens the directory where inference wrote files.
     let output_root = storage::outputs_dir(app)?;
     Ok(output_root
         .parent()
         .unwrap_or(output_root.as_path())
         .join(target))
+}
+
+/// Reveal a directory, creating it first so Explorer never falls back to
+/// Documents when the path has not been used yet.
+#[tauri::command]
+pub async fn reveal_directory(app: AppHandle, path: String) -> AppResult<()> {
+    let resolved = reveal_native_path(resolve_reveal_path(&app, &path)?);
+    std::fs::create_dir_all(&resolved)?;
+    let target = resolved.as_path();
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("explorer").arg(target).spawn()?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open").arg(target).spawn()?;
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        Command::new("xdg-open").arg(target).spawn()?;
+    }
+    Ok(())
 }
 
 /// 用系统默认关联程序打开文件（.html → 默认浏览器）。
@@ -3733,8 +3823,15 @@ pub async fn open_path(path: String) -> AppResult<()> {
 }
 
 #[tauri::command]
-pub async fn reveal_path(app: AppHandle, path: String) -> AppResult<()> {
-    let resolved = resolve_reveal_path(&app, &path)?;
+pub async fn reveal_path(
+    app: AppHandle,
+    path: String,
+    create_directory: Option<bool>,
+) -> AppResult<()> {
+    let resolved = reveal_native_path(resolve_reveal_path(&app, &path)?);
+    if create_directory.unwrap_or(false) {
+        std::fs::create_dir_all(&resolved)?;
+    }
     let target = resolved.as_path();
     let reveal_target = reveal_target_path(target);
     #[cfg(target_os = "windows")]
@@ -3892,6 +3989,18 @@ pub async fn discard_editor_recording(
     }
 }
 
+fn reveal_native_path(path: PathBuf) -> PathBuf {
+    #[cfg(windows)]
+    {
+        let text = path.to_string_lossy().replace('/', "\\");
+        PathBuf::from(text)
+    }
+    #[cfg(not(windows))]
+    {
+        path
+    }
+}
+
 fn reveal_target_path(path: &Path) -> &Path {
     if path.is_file() {
         return path.parent().unwrap_or(path);
@@ -4040,6 +4149,17 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
+    fn reveal_path_normalizes_mixed_separators() {
+        let raw = "C:/base/.soundflow/models/_cache";
+        let separator = char::from(92u8).to_string();
+        let normalized = reveal_native_path(PathBuf::from(raw));
+        #[cfg(windows)]
+        assert_eq!(normalized.to_string_lossy(), raw.replace('/', &separator));
+        #[cfg(not(windows))]
+        assert_eq!(normalized.to_string_lossy(), raw);
+    }
+
+    #[test]
     fn runtime_management_accepts_windows_and_linux_only() {
         for platform in ["windows", "linux"] {
             assert!(runtime_management_supported(platform), "{platform}");
@@ -4054,7 +4174,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("system time should be after unix epoch")
             .as_nanos();
-        std::env::temp_dir().join(format!("pymss-studio-{name}-{unique}"))
+        std::env::temp_dir().join(format!("soundflow-{name}-{unique}"))
     }
 
     #[test]

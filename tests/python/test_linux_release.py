@@ -117,7 +117,7 @@ class LinuxReleaseTests(unittest.TestCase):
             self.assertTrue(data["pymss_requires_manual_install"])
             self.assertEqual(set(data["platforms"]), {"linux-x86_64"})
             self.assertTrue(data["platforms"]["linux-x86_64"]["url"].endswith('/' + asset))
-            self.assertEqual(data["pymss_manual_install_url"], "https://github.com/fengjay01/SoundFlow/releases/tag/v1.2.3")
+            self.assertEqual(data["pymss_manual_install_url"], "https://github.com/krisfengx/SoundFlow/releases/tag/v1.2.3")
 
     def test_linux_prerelease_does_not_overwrite_stable_channel(self):
         with tempfile.TemporaryDirectory() as temporary:

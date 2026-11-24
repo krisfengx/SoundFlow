@@ -141,7 +141,7 @@ def main() -> int:
 
     try:
         environment = os.environ.copy()
-        environment["PYMSS_STUDIO_DATA_ROOT"] = str(data_root)
+        environment["SOUNDFLOW_DATA_ROOT"] = str(data_root)
         environment["PYMSS_VST_FIXTURE_BEHAVIOR"] = ""
         environment["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = (
             f"--remote-debugging-port={port}"

@@ -174,8 +174,8 @@ class OfflineCoreUpdateTests(unittest.TestCase):
                     Path(expected_core) if expected_core != base else None, python_path=python,
                 )
                 environment.update({
-                    "PYMSS_STUDIO_RUNTIME_ENVS_DIR": str(envs),
-                    "PYMSS_STUDIO_ACTIVE_RUNTIME_FILE": str(active),
+                    "SOUNDFLOW_RUNTIME_ENVS_DIR": str(envs),
+                    "SOUNDFLOW_ACTIVE_RUNTIME_FILE": str(active),
                     "PYTHONPATH": os.pathsep.join(filter(None, [environment.get("PYTHONPATH"), str(resources)])),
                 })
                 status = subprocess.run([
@@ -203,9 +203,9 @@ class OfflineCoreUpdateTests(unittest.TestCase):
             def fresh_rollback(payload):
                 environment = worker._probe_environment(python_path=python)
                 environment.update({
-                    "PYMSS_STUDIO_RUNTIME_ENVS_DIR": str(envs),
-                    "PYMSS_STUDIO_ACTIVE_RUNTIME_FILE": str(active),
-                    "PYMSS_STUDIO_BUNDLED_RUNTIME_ENVS_DIR": str(bundled_envs),
+                    "SOUNDFLOW_RUNTIME_ENVS_DIR": str(envs),
+                    "SOUNDFLOW_ACTIVE_RUNTIME_FILE": str(active),
+                    "SOUNDFLOW_BUNDLED_RUNTIME_ENVS_DIR": str(bundled_envs),
                     "PYTHONPATH": str(resources),
                 })
                 # Keep this fixture's existing audio-probe boundary while

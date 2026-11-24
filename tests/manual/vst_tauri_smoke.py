@@ -109,7 +109,7 @@ def main() -> int:
 
     try:
         environment = os.environ.copy()
-        environment["PYMSS_STUDIO_DATA_ROOT"] = str(data_root)
+        environment["SOUNDFLOW_DATA_ROOT"] = str(data_root)
         environment["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = f"--remote-debugging-port={port}"
         with (run_dir / "application.log").open("w", encoding="utf-8") as log, sync_playwright() as playwright:
             process = subprocess.Popen([str(app)], cwd=root, env=environment, stdout=log, stderr=subprocess.STDOUT)

@@ -21,7 +21,7 @@ with sync_playwright() as playwright:
         page.on('pageerror', lambda error: errors.append(str(error)))
         settings = json.dumps({'startupOnboardingSeen': True, 'beginnerGuideInvitationSeen': True, 'locale': language, 'themeMode': theme,
                               'animationsEnabled': False, 'beginnerGuideProgress': {'status': 'skipped', 'step': 0}})
-        page.add_init_script('localStorage.setItem("pymss-studio:app-settings",' + json.dumps(settings) + ')')
+        page.add_init_script('localStorage.setItem("soundflow:app-settings",' + json.dumps(settings) + ')')
         page.goto(args.url + '/#/settings?section=about')
         page.wait_for_load_state('networkidle')
         page.locator('[data-guide="guide-help"]').get_by_role('button').last.click()

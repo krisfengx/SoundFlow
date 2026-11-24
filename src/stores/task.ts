@@ -1783,8 +1783,12 @@ export const useTaskStore = defineStore('task', () => {
     return result.added
   }
 
-  async function revealPath(path: string) {
-    await invoke('reveal_path', { path })
+  async function revealPath(path: string, createDirectory = false) {
+    await invoke('reveal_path', { path, create_directory: createDirectory })
+  }
+
+  async function revealDirectory(path: string) {
+    await invoke('reveal_directory', { path })
   }
 
   async function trashPaths(paths: string[]) {
@@ -2468,6 +2472,7 @@ export const useTaskStore = defineStore('task', () => {
     removeInputFile,
     clearInputFiles,
     revealPath,
+    revealDirectory,
     trashPaths,
     trashResultPaths,
     resultTrashEmptyDirs,

@@ -17,7 +17,7 @@ with sync_playwright() as playwright:
     page.set_default_timeout(10000)
     errors = []
     page.on('pageerror', lambda error: errors.append(str(error)))
-    page.add_init_script('''localStorage.setItem('pymss-studio:app-settings', JSON.stringify({
+    page.add_init_script('''localStorage.setItem('soundflow:app-settings', JSON.stringify({
       startupOnboardingSeen:true,locale:'zh-CN',outputDir:'D:/outputs'
     }))''')
     page.goto(args.url + '/#/workflow-node-editor?new=1')

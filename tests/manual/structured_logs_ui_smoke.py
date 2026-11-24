@@ -15,7 +15,7 @@ with sync_playwright() as playwright:
     page = browser.new_page(viewport={"width": 1280, "height": 900})
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
-    page.add_init_script("""localStorage.setItem('pymss-studio:app-settings', JSON.stringify({
+    page.add_init_script("""localStorage.setItem('soundflow:app-settings', JSON.stringify({
       startupOnboardingSeen:true,locale:'zh-CN',themeMode:'light',developerMode:false
     }))""")
     page.goto(args.url.rstrip("/") + "/#/debug", timeout=60000)
@@ -40,9 +40,9 @@ with sync_playwright() as playwright:
       window.__logText=__records.map(record=>JSON.stringify(record)).join('\\n');
       window.__TAURI_INTERNALS__={metadata:{currentWindow:{label:'main'},currentWebview:{label:'main'}},
         transformCallback:()=>1,invoke:async(command,args)=>{
-          if(command==='debug_log_info')return {path:'D:/logs/current-session.log',persistentPath:'D:/logs/pymss-studio.log',
+          if(command==='debug_log_info')return {path:'D:/logs/current-session.log',persistentPath:'D:/logs/soundflow.log',
             exists:true,persistentExists:true,sizeBytes:1000,persistentSizeBytes:1000,maxBytes:5242880,persistentMaxBytes:10485760};
-          if(command==='debug_log_read')return {path:'D:/logs/pymss-studio.log',content:__logText,sizeBytes:__logText.length,truncated:false};
+          if(command==='debug_log_read')return {path:'D:/logs/soundflow.log',content:__logText,sizeBytes:__logText.length,truncated:false};
           if(command==='save_app_store'||command==='write_frontend_log')return;
           if(command==='get_build_info')return {version:'0.0.12',variant:'default',updateSupported:false};
           if(command==='get_workflow_editors')return {revision:1,editors:[]};

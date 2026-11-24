@@ -18,7 +18,7 @@ from typing import Any, Iterator, TextIO
 from uuid import uuid4
 
 WORKER_VERSION = "0.1.0"
-TERMINAL_LOG_PREFIX = "__PYMSS_STUDIO_TERMINAL_LOG__"
+TERMINAL_LOG_PREFIX = "__SOUNDFLOW_TERMINAL_LOG__"
 MAX_LOG_LINE_CHARS = 8 * 1024
 MAX_LOG_BYTES = 5 * 1024 * 1024
 MAX_PERSISTENT_LOG_BYTES = 10 * 1024 * 1024
@@ -214,7 +214,7 @@ class ProtocolLogHandler(logging.Handler):
 @contextmanager
 def protocol_logging(command: str, task_id: str | None = None, job_id: str | None = None, *, batch: bool = False) -> Iterator[None]:
     """Capture standard third-party logging only while hosted by Studio."""
-    if os.environ.get("PYMSS_STUDIO_LOG_TRANSPORT") != "protocol":
+    if os.environ.get("SOUNDFLOW_LOG_TRANSPORT") != "protocol":
         yield
         return
     context = {"command": command}
@@ -224,7 +224,7 @@ def protocol_logging(command: str, task_id: str | None = None, job_id: str | Non
     task_token = _LOG_TASK_ID.set(None if batch else task_id)
     root = logging.getLogger()
     previous_level = root.level
-    level = logging.DEBUG if os.environ.get("PYMSS_STUDIO_DEBUG_LOG") == "1" else logging.INFO
+    level = logging.DEBUG if os.environ.get("SOUNDFLOW_DEBUG_LOG") == "1" else logging.INFO
     handler = ProtocolLogHandler(
         task_id_provider=lambda: current_log_task_id() or (None if batch else task_id),
         context=context,
@@ -305,7 +305,7 @@ def now_iso() -> str:
 
 
 def debug_log(event: str, **fields: Any) -> None:
-    if os.environ.get("PYMSS_STUDIO_LOG_TRANSPORT") == "protocol":
+    if os.environ.get("SOUNDFLOW_LOG_TRANSPORT") == "protocol":
         try:
             detail = fields.pop("detail", None)
             message = {
@@ -327,10 +327,10 @@ def debug_log(event: str, **fields: Any) -> None:
         except Exception:
             pass
         return
-    if os.environ.get("PYMSS_STUDIO_DEBUG_LOG") != "1":
+    if os.environ.get("SOUNDFLOW_DEBUG_LOG") != "1":
         return
-    path = os.environ.get("PYMSS_STUDIO_SESSION_LOG")
-    persistent_path = os.environ.get("PYMSS_STUDIO_PERSISTENT_LOG")
+    path = os.environ.get("SOUNDFLOW_SESSION_LOG")
+    persistent_path = os.environ.get("SOUNDFLOW_PERSISTENT_LOG")
     if not path and not persistent_path:
         return
     try:
@@ -350,7 +350,7 @@ def debug_log(event: str, **fields: Any) -> None:
             line = line[:MAX_LOG_LINE_CHARS] + " ...[truncated]"
         _write_debug_line(path, line, MAX_LOG_BYTES)
         _write_debug_line(persistent_path, line, MAX_PERSISTENT_LOG_BYTES)
-        if os.environ.get("PYMSS_STUDIO_TERMINAL_LOG") == "1":
+        if os.environ.get("SOUNDFLOW_TERMINAL_LOG") == "1":
             print(TERMINAL_LOG_PREFIX + line, file=sys.stderr, flush=True)
     except Exception:
         pass

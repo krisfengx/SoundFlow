@@ -9,7 +9,7 @@
  *
  * Path keys that merely point at borrowed system toolchains (RUSTUP_HOME) are
  * intentionally not checked: they are read-only tool selection, not project writes.
- * PYMSS_STUDIO_PYTHON is also allowed to point outside the checkout, but an explicit
+ * SOUNDFLOW_PYTHON is also allowed to point outside the checkout, but an explicit
  * interpreter *path* that no longer exists silently breaks every bootstrap worker
  * command (seen as `os error 3`), so its existence is checked separately below.
  */
@@ -23,29 +23,32 @@ const ENV_KEYS = [
   'PIP_CACHE_DIR', 'CARGO_HOME', 'npm_config_cache', 'PNPM_HOME',
   'HF_HOME', 'TORCH_HOME', 'XDG_CACHE_HOME', 'MODELSCOPE_CACHE',
   'TMP', 'TEMP', 'TMPDIR',
-  'PYMSS_STUDIO_RUNTIME_ENVS_OVERRIDE', 'PYMSS_PLUGINS_DIR',
-  'PYMSS_STUDIO_DATA_ROOT', 'PYMSS_MODEL_DIR',
-  'PYMSS_USER_MODELS', 'PYMSS_STUDIO_DEBUG_DIR',
-  'PYMSS_STUDIO_RUNTIME_ENVS_DIR', 'PYMSS_STUDIO_ACTIVE_RUNTIME_FILE',
-  'PYMSS_STUDIO_BUNDLED_RUNTIME_ENVS_DIR',
+  'SOUNDFLOW_RUNTIME_ENVS_OVERRIDE', 'PYMSS_PLUGINS_DIR',
+  'SOUNDFLOW_DATA_ROOT', 'PYMSS_MODEL_DIR',
+  'PYMSS_USER_MODELS', 'SOUNDFLOW_DEBUG_DIR',
+  'SOUNDFLOW_RUNTIME_ENVS_DIR', 'SOUNDFLOW_ACTIVE_RUNTIME_FILE',
+  'SOUNDFLOW_BUNDLED_RUNTIME_ENVS_DIR',
 ]
 
 /** Mirror of python/_project_paths.py::default_paths() for display purposes. */
 function projectDefaults(root) {
   return {
-    'default:data_root': path.join(root, 'data'),
-    'default:models_dir': path.join(root, 'data', 'models'),
-    'default:settings_dir': path.join(root, 'data', 'settings'),
-    'default:debug_dir': path.join(root, 'data', 'debug'),
-    'default:plugins_dir': path.join(root, 'data', 'plugins'),
-    'default:user_models_file': path.join(root, 'data', 'settings', 'user_models.json'),
+    'default:data_root': path.join(root, '.soundflow'),
+    'default:models_dir': path.join(root, '.soundflow', 'models'),
+    'default:hf_home': path.join(root, '.soundflow', 'models', '_cache', 'hf'),
+    'default:torch_home': path.join(root, '.soundflow', 'models', '_cache', 'torch'),
+    'default:modelscope_cache': path.join(root, '.soundflow', 'models', '_cache', 'modelscope'),
+    'default:settings_dir': path.join(root, '.soundflow', 'settings'),
+    'default:debug_dir': path.join(root, '.soundflow', 'debug'),
+    'default:plugins_dir': path.join(root, '.soundflow', 'plugins'),
+    'default:user_models_file': path.join(root, '.soundflow', 'settings', 'user_models.json'),
     'default:runtime_envs_dir': path.join(root, '.venv', 'python', 'runtime-envs'),
-    'default:scratch_dir': path.join(root, 'data', 'temp'),
+    'default:scratch_dir': path.join(root, '.soundflow', 'temp'),
   }
 }
 
 /** Read-only tool variables whose *existence* matters even though their location does not. */
-const TOOL_PATH_KEYS = ['PYMSS_STUDIO_PYTHON']
+const TOOL_PATH_KEYS = ['SOUNDFLOW_PYTHON']
 
 function missingToolPaths(env) {
   const rows = []

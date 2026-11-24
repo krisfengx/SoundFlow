@@ -885,7 +885,7 @@ test('browser storage also migrates legacy workflows without duplicating them', 
   delete legacy.id
   delete legacy.createdAt
   delete legacy.updatedAt
-  values.set('pymss-studio:workflow-state', JSON.stringify({ workflows: [legacy], selectedWorkflowId: '' }))
+  values.set('soundflow:workflow-state', JSON.stringify({ workflows: [legacy], selectedWorkflowId: '' }))
   const store = useWorkflowStore(createPinia())
   stores.push(store)
   await store.initialize()
@@ -899,7 +899,7 @@ test('browser storage also migrates legacy workflows without duplicating them', 
     expectedUpdatedAt: loaded.updatedAt,
   })
 
-  const saved = JSON.parse(values.get('pymss-studio:workflow-state'))
+  const saved = JSON.parse(values.get('soundflow:workflow-state'))
   assert.equal(saved.workflows.length, 1)
   assert.equal(saved.workflows[0].id, loaded.id)
   assert.equal(saved.workflows[0].name, 'Browser migrated workflow')

@@ -143,7 +143,7 @@ def portable(stage: Path, seven_zip: str) -> list[Path]:
     archive = stage.with_name(stage.name + ".7z")
     if archive.exists() or list(stage.parent.glob(archive.name + ".*")):
         raise ValueError("Portable archive output already exists")
-    (stage / "pymss-studio.portable").write_text("portable\n", encoding="ascii")
+    (stage / "soundflow.portable").write_text("portable\n", encoding="ascii")
     high = stage.name.endswith("-rocm")
     subprocess.run([seven_zip, "a", "-t7z", "-m0=lzma2", "-mx=9" if high else "-mx=5",
                     "-mfb=273" if high else "-mfb=128", "-md=768m", "-ms=on", "-mf=BCJ2", "-mmt=on",
@@ -238,7 +238,7 @@ if __name__ == "__main__":
         elif args.command == "portable":
             portable(args.stage, args.seven_zip)
         else:
-            public, mirrors = previous_checksums(args.version, os.environ.get("GITHUB_REPOSITORY", "fengjay01/SoundFlow")) if args.merge_published else ({}, [])
+            public, mirrors = previous_checksums(args.version, os.environ.get("GITHUB_REPOSITORY", "krisfengx/SoundFlow")) if args.merge_published else ({}, [])
             public_assets(args.source, args.output, args.version, previous_public=public, previous_mirrors=mirrors)
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
         print(str(error), file=sys.stderr)

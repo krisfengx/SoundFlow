@@ -345,7 +345,7 @@ def _safe_int(value: Any, default: int) -> int:
 
 DEFAULT_ENDPOINT = "https://hf-mirror.com"
 FALLBACK_ENDPOINTS = ("https://hf-mirror.com", "https://huggingface.co")
-_USER_AGENT = "pymss-studio-lyrics/2"
+_USER_AGENT = "soundflow-lyrics/2"
 _CHUNK_SIZE = 256 * 1024
 _MAX_FILE_ATTEMPTS = 6
 _RETRY_BASE_DELAY = 1.0

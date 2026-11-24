@@ -27,6 +27,7 @@ mod single_instance;
 mod state;
 mod storage;
 mod terminal;
+mod tray;
 mod update_manager;
 mod update_sources;
 mod workflow_editors;
@@ -117,6 +118,7 @@ fn main() {
         .setup(|app| {
             let _ = session_log::init_session_log(app.handle());
             python::worker::recover_audio_output_temps(app.handle());
+            tray::setup(app.handle())?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -137,6 +139,8 @@ fn main() {
             commands::app_cmd::cancel_model_download,
             commands::app_cmd::write_frontend_log,
             commands::app_cmd::close_current_window,
+            commands::app_cmd::hide_main_window,
+            commands::app_cmd::quit_application,
             commands::app_cmd::minimize_current_window,
             commands::app_cmd::toggle_maximize_current_window,
             commands::app_cmd::is_current_window_maximized,
@@ -234,6 +238,7 @@ fn main() {
             commands::app_cmd::save_text_file_dialog,
             commands::app_cmd::prepare_model_dir_change,
             commands::app_cmd::reveal_path,
+            commands::app_cmd::reveal_directory,
             commands::app_cmd::move_paths_to_trash,
             commands::app_cmd::respond_model_dir_migration_conflict,
             commands::app_cmd::confirm_model_dir_migration_switch,
@@ -258,6 +263,9 @@ fn main() {
             commands::app_cmd::test_proxy_connection,
             commands::app_cmd::update_proxy_settings,
             commands::app_cmd::runtime_info,
+            commands::app_cmd::migrate_runtime_envs,
+            commands::app_cmd::migrate_data_root,
+            commands::app_cmd::migrate_model_cache_dir,
             commands::app_cmd::runtime_env_sizes,
             commands::app_cmd::network_diagnostics,
             commands::app_cmd::runtime_core_versions,
@@ -272,7 +280,7 @@ fn main() {
             commands::app_cmd::worker_health,
         ])
         .build(tauri::generate_context!())
-        .expect("error while building Pymss Studio")
+        .expect("error while building SoundFlow")
         .run(|app, event| {
             if matches!(event, tauri::RunEvent::Exit) {
                 app.state::<commands::plugin_host::PluginHostState>().shutdown();

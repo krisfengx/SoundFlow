@@ -4,9 +4,10 @@ import { createLogger } from '@/utils/logger'
 import { computed, h, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NButton, useDialog, useMessage } from 'naive-ui'
+import { NButton, NCheckbox, useDialog, useMessage } from 'naive-ui'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import AppBrandMark from '@/components/AppBrandMark.vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useTaskStore } from '@/stores/task'
@@ -27,6 +28,9 @@ const closeInProgress = ref(false)
 const allowForcedClose = ref(false)
 const closeDialogOpen = ref(false)
 let closeRecoveryCancelled = false
+
+type CloseChoice = 'minimize' | 'quit'
+type CloseAnswer = { choice: CloseChoice; remember: boolean }
 
 const pageTitle = computed(() => t(`nav.${String(route.name || 'home').startsWith('workflow-') ? 'workflows' : String(route.name || 'home')}`))
 const isMainWindow = computed(() => !appWindow || appWindow.label === 'main')
@@ -59,6 +63,57 @@ async function toggleMaximize() {
     studioLog.warn('[title-bar] toggle_maximize_current_window failed', error)
     appWindow.toggleMaximize().then(refreshMaximized).catch(innerError => studioLog.warn('[title-bar] appWindow.toggleMaximize failed', innerError))
   }
+}
+
+async function minimizeToTray() {
+  if (!appWindow) return
+  try {
+    await invoke('hide_main_window')
+  } catch (error) {
+    studioLog.warn('[title-bar] hide_main_window failed', error)
+    try { await appWindow.hide() } catch (innerError) {
+      studioLog.warn('[title-bar] appWindow.hide failed', innerError)
+      await appWindow.minimize().catch(() => {})
+    }
+  }
+}
+
+function confirmCloseBehavior(): Promise<CloseAnswer | null> {
+  return new Promise((resolve) => {
+    let settled = false
+    const remember = ref(false)
+    const finish = (answer: CloseAnswer | null) => {
+      if (settled) return
+      settled = true
+      closeDialogOpen.value = false
+      prompt.destroy()
+      resolve(answer)
+    }
+    closeDialogOpen.value = true
+    const prompt = dialog.warning({
+      title: t('settings.closeChoiceTitle'),
+      content: t('settings.closeChoiceContent'),
+      action: () => h('div', {
+        style: 'display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: flex-end',
+        onKeydown: (event: KeyboardEvent) => {
+          event.stopPropagation()
+          if (event.key === 'Escape') { event.preventDefault(); finish(null) }
+        },
+      }, [
+        h(NCheckbox, {
+          checked: remember.value,
+          'onUpdate:checked': (value: boolean) => { remember.value = value },
+          onClick: (event: MouseEvent) => event.stopPropagation(),
+        }, { default: () => t('settings.dontAskAgain') }),
+        h(NButton, { onClick: () => finish(null) }, { default: () => t('common.continueUsing') }),
+        h(NButton, { secondary: true, onClick: () => finish({ choice: 'minimize', remember: remember.value }) }, { default: () => t('settings.closeMinimizeAction') }),
+        h(NButton, { type: 'error', onClick: () => finish({ choice: 'quit', remember: remember.value }) }, { default: () => t('settings.closeQuitAction') }),
+      ]),
+      onClose: () => finish(null),
+      onMaskClick: () => finish(null),
+      onEsc: () => finish(null),
+    })
+  })
 }
 
 function confirmPersistenceFailure(error: WindowClosePersistenceError) {
@@ -94,7 +149,7 @@ function confirmPersistenceFailure(error: WindowClosePersistenceError) {
   })
 }
 
-async function performWindowClose() {
+async function performWindowClose(mode: 'window' | 'app' = 'window') {
   if (!appWindow) return false
   closeRecoveryCancelled = false
   try {
@@ -104,6 +159,14 @@ async function performWindowClose() {
     return false
   }
   allowForcedClose.value = true
+  if (mode === 'app') {
+    try {
+      await invoke('quit_application')
+      return true
+    } catch (error) {
+      studioLog.warn('[title-bar] quit_application failed; destroying window instead', error)
+    }
+  }
   try {
     await invoke('close_current_window')
     return true
@@ -147,7 +210,7 @@ function confirmForceClose(count: number) {
   })
 }
 
-async function cancelTasksAndClose() {
+async function cancelTasksAndClose(mode: 'window' | 'app' = 'window') {
   if (closeInProgress.value) return
   closeInProgress.value = true
   const loading = message.loading(t('tasks.closingAfterCancel'), { duration: 0 })
@@ -160,14 +223,14 @@ async function cancelTasksAndClose() {
         closeInProgress.value = false
         return
       }
-      const forced = await performWindowClose()
+      const forced = await performWindowClose(mode)
       if (!forced) {
         if (!closeRecoveryCancelled) message.error(t('tasks.closeForceFailed'))
         closeInProgress.value = false
       }
       return
     }
-    const closed = await performWindowClose()
+    const closed = await performWindowClose(mode)
     if (!closed) {
       if (!closeRecoveryCancelled) message.error(t('tasks.closeFailed'))
       closeInProgress.value = false
@@ -180,15 +243,10 @@ async function cancelTasksAndClose() {
   }
 }
 
-async function requestClose() {
-  if (settings.isModelDirMigrating) {
-    message.warning(t('settings.modelDirMigrationCloseBlocked'))
-    return
-  }
-  if (!appWindow || closeInProgress.value) return
+async function quitWithGuards() {
   if (!isMainWindow.value || runningTaskCount.value <= 0) {
     closeInProgress.value = true
-    const closed = await performWindowClose()
+    const closed = await performWindowClose('app')
     if (!closed) {
       if (!closeRecoveryCancelled) message.error(t('tasks.closeFailed'))
       closeInProgress.value = false
@@ -206,7 +264,7 @@ async function requestClose() {
     negativeButtonProps: { secondary: true },
     onPositiveClick: async () => {
       closeDialogOpen.value = false
-      await cancelTasksAndClose()
+      await cancelTasksAndClose('app')
     },
     onNegativeClick: () => {
       closeDialogOpen.value = false
@@ -215,6 +273,45 @@ async function requestClose() {
       closeDialogOpen.value = false
     },
   })
+}
+
+async function requestClose(forceQuit = false) {
+  if (settings.isModelDirMigrating) {
+    message.warning(t('settings.modelDirMigrationCloseBlocked'))
+    return
+  }
+  if (!appWindow || closeInProgress.value) return
+  if (!isMainWindow.value) {
+    closeInProgress.value = true
+    const closed = await performWindowClose()
+    if (!closed) {
+      if (!closeRecoveryCancelled) message.error(t('tasks.closeFailed'))
+      closeInProgress.value = false
+    }
+    return
+  }
+  if (forceQuit) {
+    await quitWithGuards()
+    return
+  }
+  const behavior = settings.closeBehavior || 'ask'
+  if (behavior === 'minimize') {
+    await minimizeToTray()
+    return
+  }
+  if (behavior === 'quit') {
+    await quitWithGuards()
+    return
+  }
+  if (closeDialogOpen.value) return
+  const answer = await confirmCloseBehavior()
+  if (!answer) return
+  if (answer.remember) settings.closeBehavior = answer.choice
+  if (answer.choice === 'minimize') {
+    await minimizeToTray()
+  } else {
+    await quitWithGuards()
+  }
 }
 
 async function close() {
@@ -231,10 +328,18 @@ function startDrag(event: MouseEvent) {
 
 let unlistenResize: (() => void) | undefined
 let unlistenCloseRequested: (() => void) | undefined
+let unlistenTrayQuit: (() => void) | undefined
 onMounted(async () => {
   await refreshMaximized()
   if (!appWindow) return
   try { unlistenResize = await appWindow.onResized(refreshMaximized) } catch {}
+  if (isMainWindow.value && typeof listen === 'function') {
+    try {
+      unlistenTrayQuit = await listen('pymss://tray-quit', () => { void requestClose(true) })
+    } catch (error) {
+      studioLog.warn('[title-bar] tray quit listener failed', error)
+    }
+  }
   try {
     unlistenCloseRequested = await appWindow.onCloseRequested((event) => {
       if (allowForcedClose.value) return
@@ -250,6 +355,7 @@ onMounted(async () => {
 onUnmounted(() => {
   unlistenResize?.()
   unlistenCloseRequested?.()
+  unlistenTrayQuit?.()
 })
 </script>
 

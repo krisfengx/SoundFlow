@@ -68,7 +68,7 @@ runs:
         try {
           $env:PYMSS_PORTABLE_DIR = $drive
           $env:PYMSS_INSTALLER_OUTPUT = $releaseFull
-          & $env:PYMSS_ISCC "installer\pymss-studio.iss"
+          & $env:PYMSS_ISCC "installer\soundflow.iss"
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE" }
         } finally {
           subst $drive /D | Out-Null

@@ -99,11 +99,11 @@ with sync_playwright() as playwright:
     page.add_init_script(
         f"""(() => {{
           localStorage.setItem(
-            'pymss-studio:app-settings',
+            'soundflow:app-settings',
             JSON.stringify({{ startupOnboardingSeen: true, locale: {locale_json} }}),
           )
-          localStorage.setItem('pymss-studio:workflow-state', JSON.stringify({json.dumps(workflow_state)}))
-          localStorage.setItem('pymss-studio:model-state', JSON.stringify({json.dumps(model_state)}))
+          localStorage.setItem('soundflow:workflow-state', JSON.stringify({json.dumps(workflow_state)}))
+          localStorage.setItem('soundflow:model-state', JSON.stringify({json.dumps(model_state)}))
         }})()"""
     )
     base_url = os.environ.get("PYMSS_SMOKE_URL", "http://127.0.0.1:1420")
@@ -142,7 +142,7 @@ with sync_playwright() as playwright:
     page.screenshot(path=f"data/outputs/simple-workflow-inference-node-custom-{screenshot_suffix}.png", full_page=True)
     page.locator(".simple-node-editor__topbar .n-button--primary-type").click()
     expect(page.locator(".n-message__content")).to_be_visible()
-    stored = page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:workflow-state'))")
+    stored = page.evaluate("JSON.parse(localStorage.getItem('soundflow:workflow-state'))")
     saved = stored["workflows"][0]["definition"]
     assert saved["steps"][0]["model_type"] == smoke_model_type
     assert saved["steps"][0]["inference_params"]["batch_size"] == 3
@@ -157,7 +157,7 @@ with sync_playwright() as playwright:
     expect(follow_switch).to_have_attribute("aria-checked", "true")
     modal.locator(".simple-inference-modal__footer .n-button--primary-type").click()
     page.locator(".simple-node-editor__topbar .n-button--primary-type").click()
-    stored = page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:workflow-state'))")
+    stored = page.evaluate("JSON.parse(localStorage.getItem('soundflow:workflow-state'))")
     assert "inference_params" not in stored["workflows"][0]["definition"]["steps"][0]
 
     page.screenshot(path=f"data/outputs/simple-workflow-inference-params-{screenshot_suffix}.png", full_page=True)

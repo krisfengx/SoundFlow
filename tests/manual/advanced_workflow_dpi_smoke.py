@@ -49,7 +49,7 @@ with sync_playwright() as playwright:
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.add_init_script('''
               window.__dpiGetterBefore=Object.getOwnPropertyDescriptor(window,'devicePixelRatio').get
-              localStorage.setItem('pymss-studio:app-settings', JSON.stringify({
+              localStorage.setItem('soundflow:app-settings', JSON.stringify({
                 startupOnboardingSeen:true,locale:'zh-CN',themeMode:'dark',scaleFactor:1,
               }))
             ''')

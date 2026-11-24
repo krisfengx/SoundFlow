@@ -11,7 +11,7 @@ fn control_path(token: &str) -> AppResult<PathBuf> {
     if !startup::valid_token(token) {
         return Err(failure("Invalid authorized update token"));
     }
-    Ok(Path::new("/private/tmp").join(format!("pymss-studio-authorized-{token}")))
+    Ok(Path::new("/private/tmp").join(format!("soundflow-authorized-{token}")))
 }
 
 fn check_control(directory: &Path) -> AppResult<bool> {

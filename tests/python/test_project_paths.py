@@ -40,14 +40,17 @@ class ProjectPathsTest(unittest.TestCase):
 
     def test_default_layout(self):
         expected = {
-            "data_root": REPO_ROOT / "data",
-            "models_dir": REPO_ROOT / "data" / "models",
-            "settings_dir": REPO_ROOT / "data" / "settings",
-            "debug_dir": REPO_ROOT / "data" / "debug",
-            "plugins_dir": REPO_ROOT / "data" / "plugins",
-            "user_models_file": REPO_ROOT / "data" / "settings" / "user_models.json",
+            "data_root": REPO_ROOT / ".soundflow",
+            "models_dir": REPO_ROOT / ".soundflow" / "models",
+            "settings_dir": REPO_ROOT / ".soundflow" / "settings",
+            "hf_home": REPO_ROOT / ".soundflow" / "models" / "_cache" / "hf",
+            "torch_home": REPO_ROOT / ".soundflow" / "models" / "_cache" / "torch",
+            "modelscope_cache": REPO_ROOT / ".soundflow" / "models" / "_cache" / "modelscope",
+            "debug_dir": REPO_ROOT / ".soundflow" / "debug",
+            "plugins_dir": REPO_ROOT / ".soundflow" / "plugins",
+            "user_models_file": REPO_ROOT / ".soundflow" / "settings" / "user_models.json",
             "runtime_envs_dir": REPO_ROOT / ".venv" / "python" / "runtime-envs",
-            "scratch_dir": REPO_ROOT / "data" / "temp",
+            "scratch_dir": REPO_ROOT / ".soundflow" / "temp",
         }
         actual = paths.default_paths()
         self.assertEqual(set(actual), set(expected))
@@ -58,9 +61,9 @@ class ProjectPathsTest(unittest.TestCase):
         home = Path.home().resolve()
         forbidden = [
             home / ".cache" / "pymss",
-            home / ".cache" / "pymss-studio",
+            home / ".cache" / "soundflow",
             home / ".pymss",
-            home / ".pymss-studio",
+            home / ".soundflow",
         ]
         for name, value in paths.default_paths().items():
             resolved = value.resolve()
@@ -71,35 +74,35 @@ class ProjectPathsTest(unittest.TestCase):
     def test_explicit_overrides_still_win(self):
         fake = REPO_ROOT / "_debug_output" / "tmp" / "_override_probe"
         env = {
-            "PYMSS_STUDIO_DATA_ROOT": str(fake / "custom-data"),
+            "SOUNDFLOW_DATA_ROOT": str(fake / "custom-data"),
             "PYMSS_MODEL_DIR": str(fake / "models"),
             "PYMSS_PLUGINS_DIR": str(fake / "plugins"),
             "PYMSS_USER_MODELS": str(fake / "user_models.json"),
-            "PYMSS_STUDIO_DEBUG_DIR": str(fake / "debug"),
-            "PYMSS_STUDIO_RUNTIME_ENVS_DIR": str(fake / "runtimes"),
+            "SOUNDFLOW_DEBUG_DIR": str(fake / "debug"),
+            "SOUNDFLOW_RUNTIME_ENVS_DIR": str(fake / "runtimes"),
         }
         with mock.patch.dict(os.environ, env):
-            self.assertEqual(paths.data_root(), Path(env["PYMSS_STUDIO_DATA_ROOT"]))
+            self.assertEqual(paths.data_root(), Path(env["SOUNDFLOW_DATA_ROOT"]))
             self.assertEqual(paths.models_dir(), Path(env["PYMSS_MODEL_DIR"]))
             self.assertEqual(paths.plugins_dir(), Path(env["PYMSS_PLUGINS_DIR"]))
             self.assertEqual(paths.user_models_file(), Path(env["PYMSS_USER_MODELS"]))
-            self.assertEqual(paths.debug_dir(), Path(env["PYMSS_STUDIO_DEBUG_DIR"]))
-            self.assertEqual(paths.runtime_envs_dir(), Path(env["PYMSS_STUDIO_RUNTIME_ENVS_DIR"]))
+            self.assertEqual(paths.debug_dir(), Path(env["SOUNDFLOW_DEBUG_DIR"]))
+            self.assertEqual(paths.runtime_envs_dir(), Path(env["SOUNDFLOW_RUNTIME_ENVS_DIR"]))
 
     def test_runtime_envs_override_variable(self):
         fake = REPO_ROOT / "_debug_output" / "tmp" / "_override_probe" / "via-override"
-        with mock.patch.dict(os.environ, {"PYMSS_STUDIO_RUNTIME_ENVS_OVERRIDE": str(fake)}):
+        with mock.patch.dict(os.environ, {"SOUNDFLOW_RUNTIME_ENVS_OVERRIDE": str(fake)}):
             self.assertEqual(paths.runtime_envs_dir(), fake)
 
     def test_project_local_or_redirects_strays(self):
-        inside = REPO_ROOT / "data" / "somewhere"
+        inside = REPO_ROOT / ".soundflow" / "somewhere"
         stray = Path.home().resolve() / "definitely-outside-soundflow"
         self.assertEqual(paths.project_local_or(inside), inside)
         self.assertEqual(paths.project_local_or(stray), paths.runtime_envs_dir())
         self.assertEqual(paths.project_local_or(stray, inside), inside)
 
     def test_is_project_local_rejects_outside_paths(self):
-        self.assertTrue(paths.is_project_local(REPO_ROOT / "data" / "models"))
+        self.assertTrue(paths.is_project_local(REPO_ROOT / ".soundflow" / "models"))
         self.assertFalse(paths.is_project_local(Path.home() / "somewhere-else"))
         self.assertFalse(paths.is_project_local(Path.home().anchor + "Windows"))
 

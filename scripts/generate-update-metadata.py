@@ -48,11 +48,11 @@ def generate(artifacts: Path, environment: dict[str, str]) -> list[str]:
                 "pymss_update_supported": supported,
                 "pymss_requires_manual_install": not supported,
                 "pymss_update_message": message,
-                "pymss_manual_install_url": f"https://github.com/fengjay01/SoundFlow/releases/tag/{tag}",
+                "pymss_manual_install_url": f"https://github.com/krisfengx/SoundFlow/releases/tag/{tag}",
                 "platforms": {
                     target: {
                         "signature": signature,
-                        "url": f"https://github.com/fengjay01/SoundFlow/releases/download/{tag}/{asset}",
+                        "url": f"https://github.com/krisfengx/SoundFlow/releases/download/{tag}/{asset}",
                     }
                 },
                 **extra,

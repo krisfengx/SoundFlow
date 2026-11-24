@@ -8,7 +8,7 @@ export const isTauriRuntime = () => typeof window !== 'undefined' && '__TAURI_IN
 const saveQueues = new Map<AppStoreName, Promise<void>>()
 
 function localStoreKey(name: AppStoreName) {
-  return `pymss-studio:${name}`
+  return `soundflow:${name}`
 }
 
 function errorMessage(error: unknown) {

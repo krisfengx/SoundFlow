@@ -31,10 +31,10 @@ _SHA256 = re.compile(r"[a-f0-9]{64}\Z")
 _TARGET = re.compile(r"gfx[0-9a-f]{3,5}\Z")
 _IDENTIFIER = re.compile(r"[a-z0-9][a-z0-9.-]{0,95}\Z")
 _RELEASE_VERSION = re.compile(r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?\Z")
-_GITHUB_RELEASE_ROOT = "https://github.com/fengjay01/SoundFlow/releases/download"
+_GITHUB_RELEASE_ROOT = "https://github.com/krisfengx/SoundFlow/releases/download"
 _RUNTIME_MIRRORS = (
-    ("ModelScope", "https://www.modelscope.cn/datasets/huanlinoto/Pymss-Studio-Dist/resolve/master"),
-    ("Hugging Face", "https://huggingface.co/datasets/HuanLin/Pymss-Studio-Dist/resolve/main"),
+    ("ModelScope", "https://www.modelscope.cn/datasets/fengjay01/SoundFlow-Dist/resolve/master"),
+    ("Hugging Face", "https://huggingface.co/datasets/fengjay01/SoundFlow-Dist/resolve/main"),
 )
 
 

@@ -24,7 +24,7 @@ with sync_playwright() as playwright:
                      'animationsEnabled': False, 'mp3BitRate': '512k', 'm4aBitRate': '512k',
                      'beginnerGuideProgress': progress}
             context.add_init_script("""if (window.parent === window && !sessionStorage.getItem('settings-upgrade-seeded')) {
-              localStorage.setItem('pymss-studio:app-settings', %s);
+              localStorage.setItem('soundflow:app-settings', %s);
               sessionStorage.setItem('settings-upgrade-seeded', '1');
             }""" % json.dumps(json.dumps(state)))
             page = context.new_page()
@@ -46,9 +46,9 @@ with sync_playwright() as playwright:
             context, page, messages = open_settings(language)
             expect(page.locator('.beginner-guide-invite')).to_have_count(0)
             expect(page.get_by_role('button', name=messages['resume'], exact=True)).to_be_visible()
-            page.wait_for_function("JSON.parse(localStorage.getItem('pymss-studio:app-settings')).mp3BitRate==='320k'")
+            page.wait_for_function("JSON.parse(localStorage.getItem('soundflow:app-settings')).mp3BitRate==='320k'")
             assert page.evaluate("__stores.get('settings').getAudioParams().mp3_bit_rate") == '320k'
-            assert page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:app-settings')).m4aBitRate") == '512k'
+            assert page.evaluate("JSON.parse(localStorage.getItem('soundflow:app-settings')).m4aBitRate") == '512k'
             page.reload(wait_until='networkidle')
             expect(page.get_by_role('button', name=messages['resume'], exact=True)).to_be_visible()
             assert page.evaluate("document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('settings').beginnerGuideProgress.stepId") == 'toolsOverview'
@@ -67,7 +67,7 @@ with sync_playwright() as playwright:
             frame = tutorial_frame(page, 'encoding')
             expect(frame.locator('.parameter-field-guide[data-parameter="' + parameter + '"]')).to_be_visible()
             assert frame.evaluate("document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('settings').defaultFormat") == output_format
-            page.wait_for_function("parameter=>JSON.parse(localStorage.getItem('pymss-studio:app-settings')).beginnerGuideProgress.parameter===parameter", arg=parameter)
+            page.wait_for_function("parameter=>JSON.parse(localStorage.getItem('soundflow:app-settings')).beginnerGuideProgress.parameter===parameter", arg=parameter)
             assert page.evaluate("__stores.get('settings').defaultFormat") == original_format
             print('Verified parameter-level tutorial resume:', parameter, output_format, flush=True)
             context.close()

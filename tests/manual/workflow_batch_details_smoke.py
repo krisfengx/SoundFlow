@@ -25,7 +25,7 @@ with sync_playwright() as playwright:
     page.on('pageerror', lambda error: errors.append(str(error)))
     data = {'app-settings': {'startupOnboardingSeen': True, 'locale': 'zh-CN', 'defaultDevice': 'cpu', 'outputDir': 'D:/outputs'},
             'workflow-state': {'selectedWorkflowId': entry['id'], 'workflows': [entry]}}
-    page.add_init_script('for (const [name,value] of Object.entries(' + json.dumps(data) + ')) localStorage.setItem("pymss-studio:"+name,JSON.stringify(value));')
+    page.add_init_script('for (const [name,value] of Object.entries(' + json.dumps(data) + ')) localStorage.setItem("soundflow:"+name,JSON.stringify(value));')
     page.goto(args.url + '/#/workflow-simple-editor?workflowId=batch-workflow')
     page.wait_for_load_state('networkidle')
     page.add_style_tag(content='.title-bar { display: none !important; }')

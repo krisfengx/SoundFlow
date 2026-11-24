@@ -44,7 +44,7 @@ with sync_playwright() as playwright:
         page = browser.new_page(viewport={'width': 1366, 'height': 768})
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
-        page.add_init_script("""localStorage.setItem('pymss-studio:app-settings',JSON.stringify({
+        page.add_init_script("""localStorage.setItem('soundflow:app-settings',JSON.stringify({
           startupOnboardingSeen:false,locale:'zh-CN',themeMode:'dark',animationsEnabled:false
         }))""")
         page.goto(args.url.rstrip('/') + '/index.html', wait_until='networkidle')
@@ -86,7 +86,7 @@ with sync_playwright() as playwright:
     assert_layout(page)
     assert_waveform_labels(page)
     page.evaluate("__settings.locale='en'")
-    expect(page.locator('#onboarding-title')).to_have_text('Welcome to Pymss Studio')
+    expect(page.locator('#onboarding-title')).to_have_text('Welcome to SoundFlow')
     for width, height in [(1280, 850), (1024, 600), (760, 600)]:
         page.set_viewport_size({'width': width, 'height': height})
         assert_layout(page)

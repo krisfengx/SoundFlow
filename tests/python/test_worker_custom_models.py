@@ -331,7 +331,7 @@ class ImportPipelineTests(unittest.TestCase):
     def _run(self, payload, register_error=None, verify_error=None):
         verify = mock.Mock(side_effect=verify_error) if verify_error else mock.Mock()
         # Patched by the name the import pipeline actually calls.
-        env = {"PYMSS_MODEL_DIR": str(self.models_dir), "PYMSS_STUDIO_CUSTOM_MODEL_META": str(self.sidecar)}
+        env = {"PYMSS_MODEL_DIR": str(self.models_dir), "SOUNDFLOW_CUSTOM_MODEL_META": str(self.sidecar)}
         with mock.patch.dict(os_environ_target, env, clear=False), \
              mock.patch.dict("sys.modules", {
                  "pymss": mock.Mock(),
@@ -598,7 +598,7 @@ class ImportPipelineTests(unittest.TestCase):
 
     def test_the_import_mode_is_remembered_for_later_removal(self):
         self._run(self._base_payload(importMode="copy"))
-        with mock.patch.dict(os_environ_target, {"PYMSS_STUDIO_CUSTOM_MODEL_META": str(self.sidecar)}, clear=False):
+        with mock.patch.dict(os_environ_target, {"SOUNDFLOW_CUSTOM_MODEL_META": str(self.sidecar)}, clear=False):
             meta = ccm.sidecar_entry("my_model")
         self.assertEqual(meta["importMode"], "copy")
         self.assertTrue(meta["managedDir"].endswith("my_model"))
@@ -622,7 +622,7 @@ class UnregisterTests(unittest.TestCase):
             self.unregistered.append(name)
             return FakeRegisteredEntry(name, "mel_band_roformer", "")
 
-        with mock.patch.dict(os_environ_target, {"PYMSS_STUDIO_CUSTOM_MODEL_META": str(self.sidecar), "PYMSS_MODEL_DIR": str(self.root)}, clear=False), \
+        with mock.patch.dict(os_environ_target, {"SOUNDFLOW_CUSTOM_MODEL_META": str(self.sidecar), "PYMSS_MODEL_DIR": str(self.root)}, clear=False), \
              mock.patch.dict("sys.modules", {
                  "pymss": mock.Mock(),
                  "pymss.model_registry": mock.Mock(unregister_model=unregister_model),
@@ -680,7 +680,7 @@ class UnregisterTests(unittest.TestCase):
         def unregister_model(name):
             raise KeyError(f"Unknown user model: {name}")
 
-        with mock.patch.dict(os_environ_target, {"PYMSS_STUDIO_CUSTOM_MODEL_META": str(self.sidecar)}, clear=False), \
+        with mock.patch.dict(os_environ_target, {"SOUNDFLOW_CUSTOM_MODEL_META": str(self.sidecar)}, clear=False), \
              mock.patch.dict("sys.modules", {
                  "pymss": mock.Mock(),
                  "pymss.model_registry": mock.Mock(unregister_model=unregister_model),
@@ -853,7 +853,7 @@ class RemapCommandTests(unittest.TestCase):
             self.registered.append({"name": name, "model_path": model_path, **kwargs})
             return FakeRegisteredEntry(name, model_type, model_path, kwargs.get("config_path"))
 
-        with mock.patch.dict(os_environ_target, {"PYMSS_STUDIO_CUSTOM_MODEL_META": str(self.sidecar)}, clear=False), \
+        with mock.patch.dict(os_environ_target, {"SOUNDFLOW_CUSTOM_MODEL_META": str(self.sidecar)}, clear=False), \
              mock.patch.dict("sys.modules", {
                  "pymss": mock.Mock(),
                  "pymss.model_registry": mock.Mock(register_model=register_model),
@@ -910,7 +910,7 @@ class RemapCommandTests(unittest.TestCase):
         }}), encoding="utf-8")
         entry = self._entry("copied", self.old_root / "custom" / "copied" / "w.ckpt")
         self._run(self._payload(), [entry])
-        with mock.patch.dict(os_environ_target, {"PYMSS_STUDIO_CUSTOM_MODEL_META": str(self.sidecar)}, clear=False):
+        with mock.patch.dict(os_environ_target, {"SOUNDFLOW_CUSTOM_MODEL_META": str(self.sidecar)}, clear=False):
             meta = ccm.sidecar_entry("copied")
         self.assertEqual(Path(meta["managedDir"]), self.new_root / "custom" / "copied")
 
@@ -961,7 +961,7 @@ class SidecarTests(unittest.TestCase):
     def test_a_corrupt_sidecar_reads_as_empty_rather_than_raising(self):
         broken = self.root / "meta.json"
         broken.write_text("{not json", encoding="utf-8")
-        with mock.patch.dict(os_environ_target, {"PYMSS_STUDIO_CUSTOM_MODEL_META": str(broken)}, clear=False):
+        with mock.patch.dict(os_environ_target, {"SOUNDFLOW_CUSTOM_MODEL_META": str(broken)}, clear=False):
             self.assertEqual(ccm._read_sidecar(), {})
             self.assertEqual(ccm.sidecar_entry("anything"), {})
 

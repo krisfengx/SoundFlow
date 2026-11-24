@@ -67,9 +67,9 @@ with sync_playwright() as playwright:
     errors = []
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.route('**/preview-audio/**', serve_preview_audio)
-    page.add_init_script('localStorage.setItem("pymss-studio:app-settings", JSON.stringify(' + json.dumps({
+    page.add_init_script('localStorage.setItem("soundflow:app-settings", JSON.stringify(' + json.dumps({
         'startupOnboardingSeen': True, 'locale': 'zh-CN', 'themeMode': 'light', 'outputDir': 'D:/Music/outputs',
-    }) + ')); localStorage.setItem("pymss-studio:workflow-state", JSON.stringify(' + json.dumps({
+    }) + ')); localStorage.setItem("soundflow:workflow-state", JSON.stringify(' + json.dumps({
         'selectedWorkflowId': workflow['id'], 'workflows': [workflow],
     }, ensure_ascii=False) + '));')
     page.goto(args.url + '/#/workflow-simple-editor?workflowId=result-preview', timeout=60000)
@@ -89,8 +89,8 @@ with sync_playwright() as playwright:
         convertFileSrc: path => location.origin + '/preview-audio/' + encodeURIComponent(path),
         invoke: async (command, args) => {
           if (command === 'reveal_path') { window.__revealed.push(args.path); return; }
-          if (command === 'save_app_store') { localStorage.setItem('pymss-studio:' + args.name, JSON.stringify(args.data)); return; }
-          if (command === 'load_app_store') return JSON.parse(localStorage.getItem('pymss-studio:' + args.name) || 'null');
+          if (command === 'save_app_store') { localStorage.setItem('soundflow:' + args.name, JSON.stringify(args.data)); return; }
+          if (command === 'load_app_store') return JSON.parse(localStorage.getItem('soundflow:' + args.name) || 'null');
           if (command.startsWith('plugin:')) return 1;
           throw new Error('Unexpected command: ' + command);
         },

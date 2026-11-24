@@ -22,8 +22,8 @@ def main():
     work.mkdir(parents=True, exist_ok=True)
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "python"))
     os.environ.update({
-        "PYMSS_STUDIO_RUNTIME_ENVS_DIR": str(work / "runtimes"),
-        "PYMSS_STUDIO_ACTIVE_RUNTIME_FILE": str(work / "active.json"),
+        "SOUNDFLOW_RUNTIME_ENVS_DIR": str(work / "runtimes"),
+        "SOUNDFLOW_ACTIVE_RUNTIME_FILE": str(work / "active.json"),
         "PYMSS_PLUGINS_DIR": str(work / "unmanaged"),
         "PIP_NO_INDEX": "1", "HF_HUB_OFFLINE": "1",
     })

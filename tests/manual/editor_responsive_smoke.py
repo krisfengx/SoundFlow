@@ -56,7 +56,7 @@ with sync_playwright() as playwright:
             page.add_init_script(f'({mock})(true)')
             preferences = {'assetCollapsed': False, 'inspectorCollapsed': False,
                            'assetPanelWidth': 300, 'inspectorPanelWidth': 320, 'panelPriority': 'inspector'}
-            page.add_init_script('localStorage.setItem("pymss-studio:editor-ui",' + json.dumps(json.dumps(preferences)) + ')')
+            page.add_init_script('localStorage.setItem("soundflow:editor-ui",' + json.dumps(json.dumps(preferences)) + ')')
             try:
                 page.goto(args.url.rstrip('/') + '/#/editor', wait_until='domcontentloaded')
                 page.wait_for_load_state('networkidle')
@@ -79,7 +79,7 @@ with sync_playwright() as playwright:
                     page.set_viewport_size({'width': width, 'height': height})
                     page.wait_for_timeout(250)
                     geometry = bounds(page, manager)
-                    stored = page.evaluate('JSON.parse(localStorage.getItem("pymss-studio:editor-ui"))')
+                    stored = page.evaluate('JSON.parse(localStorage.getItem("soundflow:editor-ui"))')
                     assert stored == preferences, stored
                     if width <= 980:
                         assert page.locator('.editor-shell__asset-panel').evaluate("""panel => {
@@ -107,7 +107,7 @@ with sync_playwright() as playwright:
                 page.mouse.down()
                 page.mouse.move(divider['x'] + divider['width'] / 2 - 12, divider['y'] + 100)
                 page.mouse.up()
-                page.wait_for_function('JSON.parse(localStorage.getItem("pymss-studio:editor-ui")).inspectorPanelWidth===332')
+                page.wait_for_function('JSON.parse(localStorage.getItem("soundflow:editor-ui")).inspectorPanelWidth===332')
                 page.set_viewport_size({'width': 980, 'height': 680})
                 page.wait_for_timeout(250)
                 page.set_viewport_size({'width': 1920, 'height': 1080})
@@ -132,7 +132,7 @@ with sync_playwright() as playwright:
                 page.set_viewport_size({'width': 1920, 'height': 1080})
                 page.wait_for_timeout(250)
                 page.locator('.editor-shell__asset-toggle').click()
-                page.wait_for_function('JSON.parse(localStorage.getItem("pymss-studio:editor-ui")).assetCollapsed===true')
+                page.wait_for_function('JSON.parse(localStorage.getItem("soundflow:editor-ui")).assetCollapsed===true')
                 page.set_viewport_size({'width': 980, 'height': 680})
                 page.set_viewport_size({'width': 1920, 'height': 1080})
                 page.wait_for_timeout(250)

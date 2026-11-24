@@ -1,5 +1,5 @@
 /**
- * Portable workflow file metadata (adapted from upstream pymss-studio).
+ * Portable workflow file metadata (adapted from upstream soundflow).
  *
  * Exported workflows carry an identity + notes alongside the executable definition.
  * Files without `_metadata` (all exports produced before this change) still import

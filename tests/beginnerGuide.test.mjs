@@ -148,6 +148,15 @@ test('related pages remain grouped and tools are introduced in one overview', ()
   assert.deepEqual(BEGINNER_GUIDE_STEPS.filter(step => step.chapter === 'tools').map(step => step.id), ['toolsOverview'])
 })
 
+test('lyrics chapter is introduced after workflows and before audio tools', () => {
+  const lyrics = BEGINNER_GUIDE_STEPS.filter(step => step.chapter === 'lyrics')
+  assert.deepEqual(lyrics.map(step => step.id), ['lyricsOverview', 'lyricsSources', 'lyricsModels'])
+  assert.ok(lyrics.every(step => step.route === '/lyrics' && step.anchor))
+  assert.ok(indexOf('workflowOutput') < indexOf('lyricsOverview'))
+  assert.ok(indexOf('lyricsModels') < indexOf('toolsOverview'))
+  assert.equal(BEGINNER_GUIDE_CHAPTERS.lyrics, 'beginnerGuide.chapters.lyrics')
+})
+
 test('MSST coverage converts to samples with the worker integer convention', () => {
   assert.equal(msstOverlapSize(485100, 1), 0)
   assert.equal(msstOverlapSize(485100, 2), 242550)

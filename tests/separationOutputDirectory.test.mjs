@@ -54,7 +54,7 @@ afterEach(async () => {
 
 function storage(initial = {}) {
   const values = new Map(Object.entries(initial).map(([key, value]) => [
-    `pymss-studio:${key}`, JSON.stringify(value),
+    `soundflow:${key}`, JSON.stringify(value),
   ]))
   globalThis.window = {}
   globalThis.localStorage = {
@@ -103,7 +103,7 @@ test('a custom directory survives page reuse but resets to Settings on applicati
   assert.equal(useTaskStore().separateOutputDir, 'E:/CustomOutput')
   task.separateOutputLayout = 'folders'
   await waitForSave()
-  assert.equal(Object.hasOwn(JSON.parse(values.get('pymss-studio:separate-state')), 'temporaryOutputDir'), false)
+  assert.equal(Object.hasOwn(JSON.parse(values.get('soundflow:separate-state')), 'temporaryOutputDir'), false)
   settings.outputDir = 'F:/NewDefault'
   assert.equal((await newStore()).separateOutputDir, 'F:/NewDefault')
 })
@@ -402,7 +402,7 @@ for (const mode of ['model', 'workflow']) {
           payload: { outputRoot, outputDir, files: [output.path], outputs: [output] },
         })
         await waitForSave()
-        const stored = JSON.parse(values.get('pymss-studio:task-history')).tasks.find(item => item.id === original.id)
+        const stored = JSON.parse(values.get('soundflow:task-history')).tasks.find(item => item.id === original.id)
         assert.equal(stored.output, outputDir)
         assert.equal(stored.jobOutput, outputRoot)
         const restarted = await newStore(platform)
@@ -722,9 +722,9 @@ for (const platform of ['linux', 'darwin']) {
     await waitForSave()
     const restored = (await newStore(platform)).getTaskById(original.id)
     assert.deepEqual(restored.outputs.map(output => output.path), expected)
-    const data = JSON.parse(values.get('pymss-studio:task-history'))
+    const data = JSON.parse(values.get('soundflow:task-history'))
     data.tasks.find(item => item.id === original.id).outputs = []
-    globalThis.localStorage.setItem('pymss-studio:task-history', JSON.stringify(data))
+    globalThis.localStorage.setItem('soundflow:task-history', JSON.stringify(data))
     const legacyRestored = (await newStore(platform)).getTaskById(original.id)
     assert.deepEqual(legacyRestored.outputs.map(output => output.path), expected)
   })

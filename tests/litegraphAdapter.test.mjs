@@ -13,9 +13,9 @@ import { setupLitegraphEnvDom } from './_litegraphEnv.mjs'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // Python interpreter used for pymss round-trip checks. Resolution order:
-// PYMSS_STUDIO_TEST_PYTHON env var > project venv (.venv/bin/python) > python3.
+// SOUNDFLOW_TEST_PYTHON env var > project venv (.venv/bin/python) > python3.
 // The pymss dev environment can be set up with: uv venv .venv && uv pip install -e ../pymss
-const PY = process.env.PYMSS_STUDIO_TEST_PYTHON
+const PY = process.env.SOUNDFLOW_TEST_PYTHON
   || [
     resolve(__dirname, '../.venv/Scripts/python.exe'),
     resolve(__dirname, '../.venv/bin/python'),

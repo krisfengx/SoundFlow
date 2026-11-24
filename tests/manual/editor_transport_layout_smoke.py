@@ -43,7 +43,7 @@ with sync_playwright() as playwright:
     for locale in ("en", "zh-CN"):
         page = browser.new_page(viewport={"width": 1041, "height": 900})
         page.add_init_script(
-            "localStorage.setItem('pymss-studio:app-settings', JSON.stringify("
+            "localStorage.setItem('soundflow:app-settings', JSON.stringify("
             + json.dumps({"startupOnboardingSeen": True, "locale": locale}) + "));"
         )
         page.goto(f"{base_url}/#/editor", wait_until="domcontentloaded", timeout=60_000)

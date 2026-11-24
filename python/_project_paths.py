@@ -13,11 +13,11 @@ environment setup required.
 Layering contract (see ``docs/environment.md``)
 ----------------------------------------------
 ``<repo>/.venv``          environment layer (rebuildable, never holds weights)
-``<repo>/data``           runtime state + models (portable, backup-able)
+``<repo>/.soundflow``      runtime state + models (portable, backup-able)
 ``<repo>/_debug_output``  ignored debug artifacts (``scripts/debug_paths.py``)
 
 Explicit environment overrides are still honoured: portable builds, CI and
-custom layouts can deliberately point ``PYMSS_STUDIO_DATA_ROOT`` elsewhere.
+custom layouts can deliberately point ``SOUNDFLOW_DATA_ROOT`` elsewhere.
 All paths are derived from ``__file__``; no drive letter or machine path is
 hard-coded, so a clone works on any machine and any OS.
 """
@@ -38,7 +38,7 @@ def _override(name: str) -> Path | None:
 
 
 def data_root() -> Path:
-    return _override("PYMSS_STUDIO_DATA_ROOT") or PROJECT_ROOT / "data"
+    return _override("SOUNDFLOW_DATA_ROOT") or PROJECT_ROOT / ".soundflow"
 
 
 def models_dir() -> Path:
@@ -48,9 +48,13 @@ def models_dir() -> Path:
 def settings_dir() -> Path:
     return data_root() / "settings"
 
+def model_cache_dirs() -> tuple[Path, Path, Path]:
+    root = models_dir() / "_cache"
+    return root / "hf", root / "torch", root / "modelscope"
+
 
 def debug_dir() -> Path:
-    return _override("PYMSS_STUDIO_DEBUG_DIR") or data_root() / "debug"
+    return _override("SOUNDFLOW_DEBUG_DIR") or data_root() / "debug"
 
 
 def user_models_file() -> Path:
@@ -63,8 +67,8 @@ def plugins_dir() -> Path:
 
 def runtime_envs_dir() -> Path:
     return (
-        _override("PYMSS_STUDIO_RUNTIME_ENVS_DIR")
-        or _override("PYMSS_STUDIO_RUNTIME_ENVS_OVERRIDE")
+        _override("SOUNDFLOW_RUNTIME_ENVS_DIR")
+        or _override("SOUNDFLOW_RUNTIME_ENVS_OVERRIDE")
         or ENV_ROOT / "python" / "runtime-envs"
     )
 
@@ -110,6 +114,9 @@ def default_paths() -> dict[str, Path]:
         "data_root": data_root(),
         "models_dir": models_dir(),
         "settings_dir": settings_dir(),
+        "hf_home": model_cache_dirs()[0],
+        "torch_home": model_cache_dirs()[1],
+        "modelscope_cache": model_cache_dirs()[2],
         "debug_dir": debug_dir(),
         "plugins_dir": plugins_dir(),
         "user_models_file": user_models_file(),

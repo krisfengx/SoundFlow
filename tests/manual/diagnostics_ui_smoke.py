@@ -53,7 +53,7 @@ with sync_playwright() as playwright:
         expect(dialog.locator('.worker-event-modal-meta')).to_contain_text(task_id)
         return dialog
 
-    page.add_init_script("""localStorage.setItem('pymss-studio:app-settings', JSON.stringify({
+    page.add_init_script("""localStorage.setItem('soundflow:app-settings', JSON.stringify({
       startupOnboardingSeen:true,locale:'zh-CN',themeMode:'light',developerMode:false
     }))""")
     page.goto(args.url.rstrip('/') + '/#/debug')

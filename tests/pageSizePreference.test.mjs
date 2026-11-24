@@ -57,7 +57,7 @@ afterEach(async () => {
 function browserStorage(initial = {}, options = {}) {
   const values = new Map(
     Object.entries(initial).map(([name, value]) => [
-      `pymss-studio:${name}`,
+      `soundflow:${name}`,
       JSON.stringify(value),
     ]),
   )
@@ -98,7 +98,7 @@ test('model library restores and persists its page size preference', async () =>
   store.modelPageSize = 96
   await waitForDebouncedSave()
 
-  assert.equal(storage.writes.at(-1)?.key, 'pymss-studio:model-state')
+  assert.equal(storage.writes.at(-1)?.key, 'soundflow:model-state')
   assert.equal(storage.writes.at(-1)?.value.modelPageSize, 96)
 })
 
@@ -112,7 +112,7 @@ test('separation model list restores and persists its page size preference', asy
   store.modelListPageSize = 8
   await waitForDebouncedSave()
 
-  assert.equal(storage.writes.at(-1)?.key, 'pymss-studio:separate-state')
+  assert.equal(storage.writes.at(-1)?.key, 'soundflow:separate-state')
   assert.equal(storage.writes.at(-1)?.value.modelListPageSize, 8)
 })
 

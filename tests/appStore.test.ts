@@ -32,7 +32,7 @@ describe('app store persistence', () => {
 
     await save
 
-    assert.deepEqual(JSON.parse(values.get('pymss-studio:app-settings') || 'null'), {
+    assert.deepEqual(JSON.parse(values.get('soundflow:app-settings') || 'null'), {
       nested: { value: 1 },
     })
   })
@@ -43,7 +43,7 @@ describe('app store persistence', () => {
       saveAppStore('model-state', { revision: 2 }),
     ])
 
-    assert.deepEqual(JSON.parse(values.get('pymss-studio:model-state') || 'null'), {
+    assert.deepEqual(JSON.parse(values.get('soundflow:model-state') || 'null'), {
       revision: 2,
     })
   })
@@ -56,11 +56,11 @@ describe('app store persistence', () => {
       configurable: true,
       value: { __TAURI_INTERNALS__: { invoke } },
     })
-    values.set('pymss-studio:update-state', JSON.stringify({ deferredVersion: '0.0.14' }))
+    values.set('soundflow:update-state', JSON.stringify({ deferredVersion: '0.0.14' }))
 
     assert.deepEqual(await loadAppStore('update-state'), { deferredVersion: '0.0.14' })
     await saveAppStore('update-state', { lastAcceptedVersion: '0.0.14' })
-    assert.deepEqual(JSON.parse(values.get('pymss-studio:update-state') || 'null'), {
+    assert.deepEqual(JSON.parse(values.get('soundflow:update-state') || 'null'), {
       lastAcceptedVersion: '0.0.14',
     })
   })

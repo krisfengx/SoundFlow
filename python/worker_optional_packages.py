@@ -89,15 +89,15 @@ class RuntimeContext:
 
 
 def _runtime_envs_dir() -> Path:
-    configured = str(os.environ.get("PYMSS_STUDIO_RUNTIME_ENVS_DIR") or "").strip()
+    configured = str(os.environ.get("SOUNDFLOW_RUNTIME_ENVS_DIR") or "").strip()
     if configured:
         return Path(configured).expanduser().resolve()
     if sys.platform == "darwin":
         # An explicit data root owns the runtimes too (portable builds / CI).
-        data_root = str(os.environ.get("PYMSS_STUDIO_DATA_ROOT") or "").strip()
+        data_root = str(os.environ.get("SOUNDFLOW_DATA_ROOT") or "").strip()
         if data_root:
             return Path(data_root).expanduser() / "runtime-envs"
-        # Plain checkout: never fall back to ~/.pymss-studio.
+        # Plain checkout: never fall back to ~/.soundflow.
         return runtime_envs_dir()
     executable = Path(sys.executable).resolve()
     env_dir = executable.parent.parent if executable.parent.name.lower() in {"scripts", "bin"} else executable.parent
@@ -115,9 +115,9 @@ def _runtime_identity(*, backend: str | None = None, executable: Path | None = N
 
 
 def _active_runtime_backend() -> str:
-    active_file = str(os.environ.get("PYMSS_STUDIO_ACTIVE_RUNTIME_FILE") or "").strip()
+    active_file = str(os.environ.get("SOUNDFLOW_ACTIVE_RUNTIME_FILE") or "").strip()
     candidates = [Path(active_file)] if active_file else []
-    bundled = str(os.environ.get("PYMSS_STUDIO_BUNDLED_RUNTIME_ENVS_DIR") or "").strip()
+    bundled = str(os.environ.get("SOUNDFLOW_BUNDLED_RUNTIME_ENVS_DIR") or "").strip()
     if bundled:
         candidates.append(Path(bundled) / "active-runtime.json")
     for file in candidates:

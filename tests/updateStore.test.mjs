@@ -66,7 +66,7 @@ const newStore = () => {
 }
 
 function browserStorage(raw = JSON.stringify(persisted016)) {
-  const values = new Map([['pymss-studio:update-state', raw]])
+  const values = new Map([['soundflow:update-state', raw]])
   const writes = []
   globalThis.window = {}
   globalThis.localStorage = {
@@ -186,8 +186,8 @@ test('browser update preferences written by 0.0.16 load without a rewrite', asyn
 
   store.availableUpdate = { ...offeredUpdate, version: '0.0.18' }
   await store.deferUntilNextLaunch()
-  assert.deepEqual(storage.writes.map(item => item.key), ['pymss-studio:update-state'])
-  const saved = JSON.parse(storage.values.get('pymss-studio:update-state'))
+  assert.deepEqual(storage.writes.map(item => item.key), ['soundflow:update-state'])
+  const saved = JSON.parse(storage.values.get('soundflow:update-state'))
   assert.deepEqual(Object.keys(saved).sort(), Object.keys(persisted016).sort())
   assert.equal(saved.deferredVersion, '0.0.18')
   assert.equal(saved.lastAcceptedVersion, '0.0.16')
@@ -207,7 +207,7 @@ test('damaged optional browser update preferences are not rewritten during initi
     assert.equal(store.deferredVersion, '')
     assert.equal(store.deferredAt, '')
     assert.equal(store.lastAcceptedVersion, '')
-    assert.equal(storage.values.get('pymss-studio:update-state'), raw)
+    assert.equal(storage.values.get('soundflow:update-state'), raw)
     assert.deepEqual(storage.writes, [])
   }
 })
@@ -237,7 +237,7 @@ test('a backend read failure leaves the stored data untouched and still register
   assert.deepEqual(storage.commands, ['load_app_store', 'write_frontend_log', 'plugin:event|listen', 'get_managed_update_state'])
   assert.deepEqual(storage.writes, [])
   assert.deepEqual(local.writes, [])
-  assert.equal(local.values.get('pymss-studio:update-state'), JSON.stringify(persisted016))
+  assert.equal(local.values.get('soundflow:update-state'), JSON.stringify(persisted016))
   assert.match(warning.mock.calls[0].arguments[0], /Studio.*Failed to load update state/)
   assert.match(warning.mock.calls[0].arguments[1], /Store read failed/)
 })
@@ -260,8 +260,8 @@ test('a backend without update-state keeps the existing local key and three-fiel
   store.availableUpdate = { ...offeredUpdate, version: '0.0.18' }
   await store.deferUntilNextLaunch()
   assert.deepEqual(storage.writes, [])
-  assert.deepEqual(local.writes.map(item => item.key), ['pymss-studio:update-state'])
-  const saved = JSON.parse(local.values.get('pymss-studio:update-state'))
+  assert.deepEqual(local.writes.map(item => item.key), ['soundflow:update-state'])
+  const saved = JSON.parse(local.values.get('soundflow:update-state'))
   assert.deepEqual(saved, {
     deferredVersion: '0.0.18', deferredAt: store.deferredAt, lastAcceptedVersion: '0.0.16',
   })
@@ -284,13 +284,13 @@ test('consecutive browser saves keep their own snapshots and omit empty optional
   const secondDate = store.deferredAt
   await Promise.all([first, second])
   assert.deepEqual(storage.writes.map(item => item.key), [
-    'pymss-studio:update-state', 'pymss-studio:update-state',
+    'soundflow:update-state', 'soundflow:update-state',
   ])
   assert.deepEqual(storage.writes.map(item => JSON.parse(item.value)), [
     { deferredVersion: '0.0.18', deferredAt: firstDate },
     { deferredVersion: '0.0.19', deferredAt: secondDate },
   ])
-  assert.equal(JSON.parse(storage.values.get('pymss-studio:update-state')).deferredVersion, '0.0.19')
+  assert.equal(JSON.parse(storage.values.get('soundflow:update-state')).deferredVersion, '0.0.19')
 })
 
 test('desktop saves remain ordered while an earlier write is pending', { timeout: 3000 }, async () => {

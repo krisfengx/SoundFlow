@@ -18,8 +18,8 @@ with sync_playwright() as playwright:
         page = browser.new_page(viewport={"width": 1280, "height": 900})
         errors = []
         page.on("pageerror", lambda error: errors.append(str(error)))
-        page.add_init_script("""if (!localStorage.getItem('pymss-studio:app-settings')) {
-          localStorage.setItem('pymss-studio:app-settings', JSON.stringify({startupOnboardingSeen:true, locale:'zh-CN', themeMode:'light', themeAccent:'teal'}));
+        page.add_init_script("""if (!localStorage.getItem('soundflow:app-settings')) {
+          localStorage.setItem('soundflow:app-settings', JSON.stringify({startupOnboardingSeen:true, locale:'zh-CN', themeMode:'light', themeAccent:'teal'}));
         }""")
         page.goto(args.url + "/#/")
         page.wait_for_load_state("networkidle")
@@ -30,14 +30,14 @@ with sync_playwright() as playwright:
             metadata: {currentWindow:{label:'main'}, currentWebview:{label:'main'}}, transformCallback: () => 1,
             invoke: async (command, args) => {
               if (command === 'get_build_info') return {version:'0.0.19', gitCommit:'1df3206ab7e64d03', gitTag:'v0.0.19', runId:'18624073182', runAttempt:'1',
-                updateSupported:true, official:true, repository:'pymss-project/pymss-studio', repositoryOwner:'pymss-project', variant:'cpu'};
+                updateSupported:true, official:true, repository:'krisfengx/SoundFlow', repositoryOwner:'krisfengx', variant:'cpu'};
               if (command === 'check_managed_update') {
                 window.__checks.push(args);
                 return {currentVersion:'0.0.19', version:'0.0.20', prerelease:false, distribution:'portable', autoUpdateSupported:true,
                   requiresManualInstall:false, source:args.source === 'auto' ? 'modelscope' : args.source, body:'恢复主页工作流推理，完善环境管理与在线更新。'};
               }
-              if (command === 'save_app_store') {localStorage.setItem('pymss-studio:' + args.name, JSON.stringify(args.data)); return;}
-              if (command === 'load_app_store') return JSON.parse(localStorage.getItem('pymss-studio:' + args.name) || 'null');
+              if (command === 'save_app_store') {localStorage.setItem('soundflow:' + args.name, JSON.stringify(args.data)); return;}
+              if (command === 'load_app_store') return JSON.parse(localStorage.getItem('soundflow:' + args.name) || 'null');
               return null;
             },
           };
@@ -68,7 +68,7 @@ with sync_playwright() as playwright:
             page.wait_for_function("value => window.__checks.at(-1)?.source === value", arg=value)
             expect(source).to_contain_text(label)
             expect(page.locator(".update-panel__meta")).to_contain_text("当前来源：" + label)
-            page.wait_for_function("value => JSON.parse(localStorage.getItem('pymss-studio:app-settings')).updateSource === value", arg=value)
+            page.wait_for_function("value => JSON.parse(localStorage.getItem('soundflow:app-settings')).updateSource === value", arg=value)
 
         page.keyboard.press("Escape")
         expect(page.locator(".n-base-select-menu:visible")).to_have_count(0)

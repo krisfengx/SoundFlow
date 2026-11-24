@@ -19,7 +19,7 @@ with sync_playwright() as playwright:
     console_errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
-    page.add_init_script("""localStorage.setItem('pymss-studio:app-settings', JSON.stringify({
+    page.add_init_script("""localStorage.setItem('soundflow:app-settings', JSON.stringify({
       startupOnboardingSeen:true,locale:'zh-CN',themeMode:'light'
     }))""")
     page.goto(args.url.rstrip("/") + "/#/editor", wait_until="domcontentloaded", timeout=60000)

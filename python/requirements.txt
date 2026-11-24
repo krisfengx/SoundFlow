@@ -3,7 +3,7 @@
 # Install development dependencies with: python -m pip install -r python/requirements.txt
 #
 # This file documents the runtime modules the worker expects to be available
-# in the Python interpreter selected by PYMSS_STUDIO_PYTHON or by "python".
+# in the Python interpreter selected by SOUNDFLOW_PYTHON or by "python".
 
 av>=14
 librosa>=0.10.2

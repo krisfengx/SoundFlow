@@ -51,10 +51,10 @@ def plugin_source(config_path: Path, draft: object | None = None) -> dict:
     repository = config["repository"]
     value = draft
     if value is None:
-        raw = os.environ.get("PYMSS_STUDIO_PLUGIN_SOURCE_OVERRIDE")
+        raw = os.environ.get("SOUNDFLOW_PLUGIN_SOURCE_OVERRIDE")
         value = json.loads(raw) if raw else None
     if value is None:
-        local = os.environ.get("PYMSS_STUDIO_PLUGINS_SOURCE")
+        local = os.environ.get("SOUNDFLOW_PLUGINS_SOURCE")
         if local:
             value = {"mode": "local", "localPath": local}
         else:

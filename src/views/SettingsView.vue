@@ -50,7 +50,6 @@ import {
   TerminalOutline,
   SettingsOutline,
   SpeedometerOutline,
-  SwapHorizontalOutline,
   LogoGithub,
   InformationCircleOutline,
   DocumentTextOutline,
@@ -114,12 +113,12 @@ const buildInfo = ref<BuildInfo | null>(null)
 const updateChecking = ref(false)
 const updateInstalling = ref(false)
 const appVersion = computed(() => buildInfo.value?.version || packageMeta.version || '0.0.0')
-const repoUrl = 'https://github.com/pymss-project/pymss-studio'
-const officialRepository = 'pymss-project/pymss-studio'
-const officialRepositoryOwner = 'pymss-project'
-// 本项目（SoundFlow）自有仓库；repoUrl 仍指上游，用于更新下载（见下方更新卡片）
-const soundflowRepoUrl = 'https://github.com/fengjay01/SoundFlow'
-const soundflowIssuesUrl = 'https://github.com/fengjay01/SoundFlow/issues'
+const repoUrl = 'https://github.com/krisfengx/SoundFlow'
+const officialRepository = 'krisfengx/SoundFlow'
+const officialRepositoryOwner = 'krisfengx'
+// 更新检查/下载地址在 Rust 层（update_manager.rs / update_sources.rs）统一指向本项目仓库。
+const soundflowRepoUrl = 'https://github.com/krisfengx/SoundFlow'
+const soundflowIssuesUrl = 'https://github.com/krisfengx/SoundFlow/issues'
 const coreRepoUrl = 'https://github.com/pymss-project/pymss'
 const licenseUrl = 'https://www.gnu.org/licenses/agpl-3.0.html'
 const coreLicenseUrl = 'https://github.com/pymss-project/pymss/blob/main/LICENSE'
@@ -135,6 +134,9 @@ const {
   dataRoot,
   modelDir,
   outputDir,
+  runtimeEnvsDir,
+  closeBehavior,
+  torchSource,
   settingsDir,
   editorProjectsDir,
   logsDir,
@@ -433,7 +435,7 @@ async function installBackend(backend: RuntimeBackend) {
   )
   if (!confirmed) return
   try {
-    await app.installRuntime(backend, runtimeMirror.value, currentLocale.value)
+    await app.installRuntime(backend, runtimeMirror.value, currentLocale.value, torchSource.value)
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
   }
@@ -667,6 +669,11 @@ const proxyModeOptions = computed(() => [
 const downloadMethodOptions = computed(() => [
   { value: 'aria2c' as const, label: t('settings.downloadMethodAria2c') },
   { value: 'urllib' as const, label: t('settings.downloadMethodUrllib') },
+])
+const closeBehaviorOptions = computed(() => [
+  { value: 'ask' as const, label: t('settings.closeBehaviorAsk') },
+  { value: 'minimize' as const, label: t('settings.closeBehaviorMinimize') },
+  { value: 'quit' as const, label: t('settings.closeBehaviorQuit') },
 ])
 
 function buildProxyTestSuggestion(error: string, mode: string): string {
@@ -1069,6 +1076,13 @@ const dataDirEntries = computed(() => [
   { key: 'settings.settingsDir', value: settingsDir.value, fallback: 'settings' },
   { key: 'settings.logsDir', value: logsDir.value, fallback: 'logs' },
 ])
+function joinNativePath(base: string, ...parts: string[]): string {
+  const trimmed = base.replace(/[\\/]+$/, '')
+  const separator = /^[A-Za-z]:[\\/]/.test(trimmed) ? '\\' : '/'
+  return [trimmed, ...parts].join(separator)
+}
+
+const effectiveModelCacheDir = computed(() => settings.modelCacheDir || (dataRoot.value ? joinNativePath(dataRoot.value, 'models', '_cache') : ''))
 const hasActiveModelDirUsage = computed(() => {
   const hasRunningWorkerTask = activeWorkerTasks.value.length > 0
   const hasDownloadingModel = Object.values(downloadTasks.value).some((item) => ['preparing', 'downloading'].includes(item.status))
@@ -1093,6 +1107,9 @@ const modelDirMigrationProgress = computed(() => {
 const modelDirMigrationHasConflict = computed(() => modelDirMigrationState.value.status === 'conflict' && !!modelDirMigrationState.value.conflict)
 const modelDirMigrationHasResult = computed(() => ['success', 'failed', 'aborted'].includes(modelDirMigrationState.value.status))
 const isCheckingModelDir = ref(false)
+const isMigratingRuntimeDir = ref(false)
+const isMigratingDataRoot = ref(false)
+const effectiveRuntimeDir = computed(() => runtimeEnvsDir.value || app.runtimeInfo?.runtimeEnvsDir || '')
 const languageSelectWrap = ref<HTMLElement | null>(null)
 
 function dirName(path: string, fallback: string) {
@@ -1169,9 +1186,9 @@ async function selectLocale(code: LocaleSetting) {
   }, origin)
 }
 
-async function revealPath(path: string) {
+async function revealPath(path: string, createDirectory = false) {
   try {
-    await task.revealPath(path)
+    await task.revealPath(path, createDirectory)
   } catch (error) {
     message.error(error instanceof Error ? error.message : String(error))
   }
@@ -1198,6 +1215,89 @@ async function changeModelDir() {
     message.error(error instanceof Error ? error.message : String(error))
   } finally {
     isCheckingModelDir.value = false
+  }
+}
+
+async function changeRuntimeDir() {
+  if (isMigratingRuntimeDir.value) return
+  if (activeWorkerTasks.value.length > 0) {
+    message.warning(t('settings.runtimeDirChangeBlocked'))
+    return
+  }
+  const folder = await settings.pickFolder()
+  if (!folder) return
+  isMigratingRuntimeDir.value = true
+  try {
+    await settings.migrateRuntimeEnvDir(folder)
+    await Promise.allSettled([app.checkRuntimeInfo(), app.loadRuntimeEnvSizes()])
+    message.success(t('settings.runtimeDirChanged'))
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  } finally {
+    isMigratingRuntimeDir.value = false
+  }
+}
+
+async function changeDataRoot() {
+  if (isMigratingDataRoot.value) return
+  if (settings.isModelDirMigrating || isMigratingRuntimeDir.value || activeWorkerTasks.value.length > 0) {
+    message.warning(t('settings.dataRootChangeBlocked'))
+    return
+  }
+  const folder = await settings.pickFolder()
+  if (!folder) return
+  if (folder === dataRoot.value) {
+    message.warning(t('settings.dataRootSamePath'))
+    return
+  }
+  const confirmed = await confirmRuntimeAction(
+    t('settings.dataRootChangeTitle'),
+    t('settings.dataRootChangeContent'),
+    t('settings.dataRootChangeAction'),
+  )
+  if (!confirmed) return
+  isMigratingDataRoot.value = true
+  try {
+    await invoke('migrate_data_root', { payload: { targetDir: folder } })
+    await settings.refreshAppPaths()
+    message.success(t('settings.dataRootChanged'))
+    const restart = await confirmRuntimeAction(
+      t('settings.dataRootRestartTitle'),
+      t('settings.dataRootRestartContent'),
+      t('settings.dataRootRestartAction'),
+    )
+    if (restart) await invoke('quit_application')
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  } finally {
+    isMigratingDataRoot.value = false
+  }
+}
+
+async function openModelCacheDir() {
+  if (!effectiveModelCacheDir.value) return
+  try {
+    await task.revealDirectory(effectiveModelCacheDir.value)
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+async function changeModelCacheDir() {
+  const folder = await settings.pickFolder()
+  if (!folder || folder === effectiveModelCacheDir.value) return
+  const confirmed = await confirmRuntimeAction(
+    t('settings.modelCacheDirChangeTitle'),
+    t('settings.modelCacheDirChangeContent'),
+    t('settings.modelCacheDirChangeAction'),
+  )
+  if (!confirmed) return
+  try {
+    const result = await invoke<{ modelCacheDir: string }>('migrate_model_cache_dir', { targetDir: folder })
+    await settings.applyModelCacheDir(result.modelCacheDir)
+    message.success(t('settings.modelCacheDirChanged'))
+  } catch (error) {
+    message.error(error instanceof Error ? error.message : String(error))
   }
 }
 
@@ -1960,16 +2060,27 @@ onMounted(async () => {
               {{ t('settings.runtimeDiskTotal', { size: runtimeDiskTotalLabel }) }}
             </p>
 
-            <div class="runtime-mirror-row">
-              <label class="text-muted text-sm">{{ t('settings.runtimeMirrorLabel') }}</label>
-              <n-select v-model:value="runtimeMirror" size="small" class="runtime-mirror-row__select" :options="[
-                { label: t('onboarding.runtimeMirrorAuto'), value: 'auto' },
-                { label: t('onboarding.runtimeMirrorUstc'), value: 'ustc' },
-                { label: t('onboarding.runtimeMirrorTsinghua'), value: 'tsinghua' },
-                { label: t('onboarding.runtimeMirrorAliyun'), value: 'aliyun' },
-                { label: t('onboarding.runtimeMirrorTencent'), value: 'tencent' },
-                { label: t('onboarding.runtimeMirrorPypi'), value: 'pypi' },
-              ]" />
+            <div class="runtime-source-grid">
+              <div class="runtime-mirror-row">
+                <label class="text-muted text-sm">{{ t('settings.runtimeMirrorLabel') }}</label>
+                <n-select v-model:value="runtimeMirror" size="small" class="runtime-mirror-row__select" :options="[
+                  { label: t('onboarding.runtimeMirrorAuto'), value: 'auto' },
+                  { label: t('onboarding.runtimeMirrorUstc'), value: 'ustc' },
+                  { label: t('onboarding.runtimeMirrorTsinghua'), value: 'tsinghua' },
+                  { label: t('onboarding.runtimeMirrorAliyun'), value: 'aliyun' },
+                  { label: t('onboarding.runtimeMirrorTencent'), value: 'tencent' },
+                  { label: t('onboarding.runtimeMirrorPypi'), value: 'pypi' },
+                ]" />
+              </div>
+
+              <div class="runtime-mirror-row runtime-mirror-row--torch">
+                <label class="text-muted text-sm">{{ t('settings.torchSourceLabel') }}</label>
+                <n-select v-model:value="torchSource" size="small" class="runtime-mirror-row__select" :options="[
+                  { label: t('settings.torchSourceOfficial'), value: 'official' },
+                  { label: t('settings.torchSourceSjtu'), value: 'sjtu' },
+                  { label: t('settings.torchSourceAliyun'), value: 'aliyun' },
+                ]" />
+              </div>
             </div>
 
             <n-alert v-if="app.runtimeInstallStatus === 'error'" type="error" :show-icon="true">
@@ -2040,9 +2151,22 @@ onMounted(async () => {
             <div class="path-root-block">
               <div class="path-root-row">
                 <code class="path-root" :title="dataRoot || t('common.notSet')">{{ dataRoot || t('common.notSet') }}</code>
-                <n-button secondary size="small" :disabled="!dataRoot" @click="revealPath(dataRoot)">
-                  {{ t('common.open') }}
-                </n-button>
+                <div class="path-root-actions">
+                  <n-button secondary size="small" :disabled="!dataRoot" @click="revealPath(dataRoot)">
+                    {{ t('common.open') }}
+                  </n-button>
+                  <n-button
+                    secondary
+                    type="primary"
+                    size="small"
+                    :loading="isMigratingDataRoot"
+                    :disabled="isMigratingDataRoot || !dataRoot"
+                    @click="changeDataRoot"
+                  >
+                    <template #icon><n-icon :component="FolderOpenOutline" /></template>
+                    {{ t('settings.changeDataRoot') }}
+                  </n-button>
+                </div>
               </div>
             </div>
 
@@ -2067,12 +2191,39 @@ onMounted(async () => {
                       :disabled="hasActiveModelDirUsage || isCheckingModelDir"
                       @click="changeModelDir"
                     >
-                      <template #icon><n-icon :component="SwapHorizontalOutline" /></template>
+                      <template #icon><n-icon :component="FolderOpenOutline" /></template>
                       {{ t('settings.changeModelDir') }}
                     </n-button>
                   </div>
                 </div>
                 <code class="path-item__value" :title="modelDir || t('common.notSet')">{{ modelDir || t('common.notSet') }}</code>
+                <p class="path-item__hint">{{ t('settings.modelDirHint') }}</p>
+              </div>
+
+              <div class="path-item path-item--primary">
+                <div class="path-item__head">
+                  <div class="path-item__head-copy">
+                    <strong>{{ t('settings.runtimeDir') }}</strong>
+                  </div>
+                  <div class="path-item__actions">
+                    <n-button secondary size="small" :disabled="!effectiveRuntimeDir" @click="revealPath(effectiveRuntimeDir)">
+                      {{ t('common.open') }}
+                    </n-button>
+                    <n-button
+                      secondary
+                      type="primary"
+                      size="small"
+                      :loading="isMigratingRuntimeDir"
+                      :disabled="isMigratingRuntimeDir || activeWorkerTasks.length > 0"
+                      @click="changeRuntimeDir"
+                    >
+                      <template #icon><n-icon :component="FolderOpenOutline" /></template>
+                      {{ t('settings.changeRuntimeDir') }}
+                    </n-button>
+                  </div>
+                </div>
+                <code class="path-item__value" :title="effectiveRuntimeDir || t('common.notSet')">{{ effectiveRuntimeDir || t('common.notSet') }}</code>
+                <p class="path-item__hint">{{ t('settings.runtimeDirHint') }}</p>
               </div>
 
               <div class="path-item path-item--primary">
@@ -2091,6 +2242,26 @@ onMounted(async () => {
                   </div>
                 </div>
                 <code class="path-item__value" :title="outputDir || t('common.notSet')">{{ outputDir || t('common.notSet') }}</code>
+                <p class="path-item__hint">{{ t('settings.outputDirHint') }}</p>
+              </div>
+
+              <div class="path-item path-item--primary">
+                <div class="path-item__head">
+                  <div class="path-item__head-copy">
+                    <strong>{{ t('settings.modelCacheDir') }}</strong>
+                  </div>
+                  <div class="path-item__actions">
+                    <n-button secondary size="small" :disabled="!effectiveModelCacheDir" @click="openModelCacheDir">
+                      {{ t('common.open') }}
+                    </n-button>
+                    <n-button secondary type="primary" size="small" @click="changeModelCacheDir">
+                      <template #icon><n-icon :component="FolderOpenOutline" /></template>
+                      {{ t('settings.changeModelCacheDir') }}
+                    </n-button>
+                  </div>
+                </div>
+                <code class="path-item__value" :title="effectiveModelCacheDir || t('common.notSet')">{{ effectiveModelCacheDir || t('common.notSet') }}</code>
+                <p class="path-item__hint">{{ t('settings.modelCacheDirHint') }}</p>
               </div>
             </div>
 
@@ -2239,6 +2410,23 @@ onMounted(async () => {
                 <p class="text-muted text-sm setting-field__hint">
                   {{ t('settings.maxConcurrentSeparationsHint') }}
                 </p>
+              </div>
+            </section>
+
+            <section class="settings-group settings-group--soft">
+              <div class="settings-group__head">
+                <span class="settings-group__icon">
+                  <n-icon :component="SettingsOutline" size="16" />
+                </span>
+                <span>{{ t('settings.closeBehavior') }}</span>
+              </div>
+              <div class="setting-field">
+                <label class="text-muted text-sm">{{ t('settings.closeBehaviorTitle') }}</label>
+                <n-select
+                  v-model:value="closeBehavior"
+                  :options="closeBehaviorOptions"
+                />
+                <p class="text-muted text-sm setting-field__hint">{{ t('settings.closeBehaviorHint') }}</p>
               </div>
             </section>
 
@@ -3355,6 +3543,36 @@ onMounted(async () => {
   width: 220px;
 }
 
+.runtime-source-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-2) 42%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--outline) 28%, transparent);
+}
+
+.runtime-source-grid > .runtime-mirror-row {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: 10px;
+  padding-top: 0;
+}
+
+.runtime-source-grid > .runtime-mirror-row:first-child {
+  padding-right: 16px;
+  border-right: 1px solid color-mix(in srgb, var(--outline) 24%, transparent);
+}
+
+.runtime-source-grid .runtime-mirror-row label {
+  white-space: nowrap;
+}
+
+.runtime-source-grid .runtime-mirror-row__select {
+  width: 220px;
+}
+
 .runtime-env-card__head {
   display: flex;
   align-items: center;
@@ -3855,6 +4073,15 @@ onMounted(async () => {
   align-items: center;
 }
 
+.path-root-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  padding-right: 15px;
+}
+
 .path-root {
   display: flex;
   align-items: center;
@@ -3885,13 +4112,15 @@ onMounted(async () => {
 
 .path-primary-grid {
   display: grid;
+  align-items: start;
   gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .path-item {
   display: grid;
-  gap: 12px;
+  align-content: start;
+  gap: 10px;
   padding: 14px;
   border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--outline) 56%, transparent);
@@ -3961,6 +4190,14 @@ onMounted(async () => {
   color: color-mix(in srgb, var(--on-surface) 88%, var(--on-surface-muted));
   font-family: "JetBrains Mono", "Cascadia Code", Consolas, "MiSans", "PingFang SC", "Microsoft YaHei", ui-monospace, monospace;
   font-size: 12px;
+}
+
+.path-item__hint {
+  min-height: 30px;
+  margin: 0;
+  color: var(--on-surface-muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .path-subcard {

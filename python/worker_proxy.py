@@ -92,10 +92,10 @@ def parse_proxy_config(value: Any) -> ProxyConfig:
 
 
 def load_proxy_config() -> ProxyConfig:
-    raw = os.environ.get("PYMSS_STUDIO_PROXY_CONFIG", "")
+    raw = os.environ.get("SOUNDFLOW_PROXY_CONFIG", "")
     if raw:
         return parse_proxy_config(raw)
-    mode = os.environ.get("PYMSS_STUDIO_PROXY_MODE", "system")
+    mode = os.environ.get("SOUNDFLOW_PROXY_MODE", "system")
     url = os.environ.get("HTTP_PROXY") or os.environ.get("http_proxy") or ""
     bypass = os.environ.get("NO_PROXY") or os.environ.get("no_proxy") or ""
     return parse_proxy_config({"mode": mode, "url": url, "bypass": bypass})

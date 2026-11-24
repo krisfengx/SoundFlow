@@ -43,7 +43,7 @@ with sync_playwright() as playwright:
     errors = []
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.add_init_script('for(const [name,value] of Object.entries(' + json.dumps(fixtures) + ''')) {
-      const key='pymss-studio:'+name;
+      const key='soundflow:'+name;
       if(!localStorage.getItem(key)) localStorage.setItem(key,JSON.stringify(value));
     }''')
     page.goto(args.url + '/#/results')
@@ -105,7 +105,7 @@ with sync_playwright() as playwright:
     expect(page.locator('.result-row')).to_have_count(0)
     assert page.evaluate('window.__removalCalls') == [
         {'type': 'trash', 'paths': ['D:/outputs/single.wav']}, {'type': 'projects', 'ids': ['single']}]
-    assert page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:task-history')).tasks") == []
+    assert page.evaluate("JSON.parse(localStorage.getItem('soundflow:task-history')).tasks") == []
     assert not errors, errors
     browser.close()
 print('PASS: result deletion, failed siblings, optional recycling, persistence, legacy deletions and no-result run cleanup')

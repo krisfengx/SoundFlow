@@ -1,5 +1,5 @@
 /**
- * Plugin update decision layer (adapted from upstream pymss-studio).
+ * Plugin update decision layer (adapted from upstream soundflow).
  *
  * Upstream receives an explicit `status` / `target.schemaVersion` / `contentDigest`
  * from a newer worker. Our worker still reports `up_to_date`, `content_changed` and

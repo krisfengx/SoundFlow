@@ -260,12 +260,12 @@ def verify_app(app: Path) -> None:
                     environment.pop(name)
             environment.update({
                 "PYTHONHOME": str(runtime), "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1",
-                "PYMSS_STUDIO_DATA_ROOT": str(directory),
-                "PYMSS_STUDIO_RUNTIME_ENVS_DIR": str(directory / "runtime-envs"),
-                "PYMSS_STUDIO_ACTIVE_RUNTIME_FILE": str(directory / "runtime-envs/active-runtime.json"),
-                "PYMSS_STUDIO_BUNDLED_RUNTIME_ENVS_DIR": str(runtime / "runtime-envs"),
-                "PYMSS_STUDIO_DEFAULT_OUTPUT_DIR": str(directory / "outputs"),
-                "PYMSS_STUDIO_DEBUG_DIR": str(directory / "debug"),
+                "SOUNDFLOW_DATA_ROOT": str(directory),
+                "SOUNDFLOW_RUNTIME_ENVS_DIR": str(directory / "runtime-envs"),
+                "SOUNDFLOW_ACTIVE_RUNTIME_FILE": str(directory / "runtime-envs/active-runtime.json"),
+                "SOUNDFLOW_BUNDLED_RUNTIME_ENVS_DIR": str(runtime / "runtime-envs"),
+                "SOUNDFLOW_DEFAULT_OUTPUT_DIR": str(directory / "outputs"),
+                "SOUNDFLOW_DEBUG_DIR": str(directory / "debug"),
                 "PYMSS_USER_MODELS": str(directory / "user-models.json"),
                 "PYMSS_MODEL_DIR": str(directory / "models"),
                 "NUMBA_CACHE_DIR": str(directory / "numba-cache"),

@@ -20,10 +20,10 @@ work.mkdir(parents=True)
 (work / "active.json").write_text('{"backend":"cpu"}')
 environment = {
     **{key: value for key, value in os.environ.items() if key not in {"PYTHONPATH", "PYMSS_PLUGINS_REGISTRY"}},
-    "PYMSS_STUDIO_RUNTIME_ENVS_DIR": str(work / "runtimes"),
-    "PYMSS_STUDIO_ACTIVE_RUNTIME_FILE": str(work / "active.json"),
+    "SOUNDFLOW_RUNTIME_ENVS_DIR": str(work / "runtimes"),
+    "SOUNDFLOW_ACTIVE_RUNTIME_FILE": str(work / "active.json"),
     "PYMSS_PLUGINS_DIR": str(work / "pymss-dir"),
-    "PYMSS_STUDIO_PLUGINS_SOURCE": str(plugins_repo),
+    "SOUNDFLOW_PLUGINS_SOURCE": str(plugins_repo),
     "PYTHONIOENCODING": "utf-8",
 }
 results = []

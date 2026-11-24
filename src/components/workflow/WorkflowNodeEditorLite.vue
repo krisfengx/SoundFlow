@@ -288,7 +288,7 @@ function onEditorKey(event: KeyboardEvent) {
 const canUndo = computed(() => history.value.past.length > 0)
 const canRedo = computed(() => history.value.future.length > 0)
 
-// --- theme: dark to match pymss-studio -------------------------------------
+// --- theme: dark to match soundflow -------------------------------------
 function applyTheme() {
   LiteGraph.NODE_DEFAULT_BGCOLOR = '#262b33'
   LiteGraph.NODE_DEFAULT_COLOR = '#303947'

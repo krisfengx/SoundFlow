@@ -38,7 +38,7 @@ test('unsupported builds do not expose macOS application maintenance', () => {
 
 test('manual upgrade opens its release even when an earlier repair failed', async () => {
   const opened = []
-  const url = 'https://github.com/pymss-project/pymss-studio/releases/tag/v0.0.17'
+  const url = 'https://github.com/krisfengx/SoundFlow/releases/tag/v0.0.17'
   const scope = {
     updates: { repairing: true, manualInstallUrl: url }, app: { buildInfoVersion: '0.0.16' },
     manualUpdateError: { value: 'previous failure' }, manualUpdateModalVisible: { value: true },
@@ -53,12 +53,12 @@ test('manual upgrade opens its release even when an earlier repair failed', asyn
 test('repair failure opens the current release instead of an offered upgrade', async () => {
   const opened = []
   const scope = {
-    updates: { repairing: true, manualInstallUrl: 'https://github.com/pymss-project/pymss-studio/releases/tag/v0.0.17' },
+    updates: { repairing: true, manualInstallUrl: 'https://github.com/krisfengx/SoundFlow/releases/tag/v0.0.17' },
     app: { buildInfoVersion: '0.0.16' }, manualUpdateError: { value: '' }, manualUpdateModalVisible: { value: false },
     open: async value => opened.push(value),
   }
   await componentFunction('../src/App.vue', 'openManualUpdate', scope)(true)
-  assert.deepEqual(opened, ['https://github.com/pymss-project/pymss-studio/releases/tag/v0.0.16'])
+  assert.deepEqual(opened, ['https://github.com/krisfengx/SoundFlow/releases/tag/v0.0.16'])
 })
 
 test('deferred update preflight keeps busy feedback visible', async () => {

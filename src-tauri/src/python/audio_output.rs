@@ -99,8 +99,8 @@ impl AudioOutputScope {
 
     pub(super) fn configure(&self, command: &mut std::process::Command) {
         command
-            .env("PYMSS_STUDIO_AUDIO_TEMP_TOKEN", &self.token)
-            .env("PYMSS_STUDIO_AUDIO_TEMP_STATE", &self.record);
+            .env("SOUNDFLOW_AUDIO_TEMP_TOKEN", &self.token)
+            .env("SOUNDFLOW_AUDIO_TEMP_STATE", &self.record);
     }
 
     pub(super) fn attach(&mut self, pid: u32) -> io::Result<()> {

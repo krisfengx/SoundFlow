@@ -123,7 +123,7 @@ jobs:
           $arguments = @('scripts/runtime-artifacts.py', 'resolve', '--profile', $env:PYMSS_ROCM_PROFILE,
             '--profile-revision', $env:PYMSS_ROCM_REVISION, '--channel', $env:PYMSS_ROCM_CHANNEL,
             '--manifest', 'release/rocm-distribution-manifest.json',
-            '--base-url', "https://www.modelscope.cn/datasets/huanlinoto/Pymss-Studio-Dist/resolve/master/wheels",
+            '--base-url', "https://www.modelscope.cn/datasets/fengjay01/SoundFlow-Dist/resolve/master/wheels",
             '--output', 'release/rocm-runtime-assets')
           if ($targets.Count) { $arguments += @('--targets') + $targets }
           & python @arguments
@@ -135,7 +135,7 @@ jobs:
             $defaultArguments = @('scripts/runtime-artifacts.py', 'resolve', '--profile', $defaultProfile,
               '--profile-revision', $defaultRecipe.revision, '--channel', $defaultRecipe.releaseState,
               '--manifest', 'release/rocm-distribution-manifest.json',
-              '--base-url', "https://www.modelscope.cn/datasets/huanlinoto/Pymss-Studio-Dist/resolve/master/wheels",
+              '--base-url', "https://www.modelscope.cn/datasets/fengjay01/SoundFlow-Dist/resolve/master/wheels",
               '--output', 'release/rocm-runtime-assets')
             if ($defaultRecipe.installMode -eq 'multiarch') { $defaultArguments += @('--targets', 'all') }
             & python @defaultArguments
@@ -253,7 +253,7 @@ jobs:
           PYMSS_BUILD_TARGET: windows-x64
           PYMSS_BUILD_VARIANT: windows-x64-cuda
           PYMSS_BUILD_UPDATE_SUPPORTED: 'true'
-          PYMSS_BUILD_OFFICIAL: ${{ github.repository == 'fengjay01/SoundFlow' && github.repository_owner == 'fengjay01' && 'true' || 'false' }}
+          PYMSS_BUILD_OFFICIAL: ${{ github.repository == 'krisfengx/SoundFlow' && github.repository_owner == 'krisfengx' && 'true' || 'false' }}
         run: pnpm plugins:build --no-bundle
 
       - name: Download shared Windows bundled tools
@@ -269,7 +269,7 @@ jobs:
           $stage = "release/${{ steps.meta.outputs.stage_name }}"
           if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
-          Copy-Item "src-tauri/target/release/pymss-studio.exe" "$stage/SoundFlow.exe"
+          Copy-Item "src-tauri/target/release/soundflow.exe" "$stage/SoundFlow.exe"
           Copy-Item "python" "$stage/python" -Recurse
           Copy-Item "python-runtime" "$stage/python-runtime" -Recurse
           Copy-Item "release/bin" "$stage/bin" -Recurse
@@ -277,14 +277,14 @@ jobs:
           ./scripts/prepare-python-runtime.ps1 -RewriteRuntimeEnvConfigs -RuntimeEnvsDir "$stage/python-runtime/runtime-envs" -RuntimeDir "$stage/python-runtime"
           @"
           SoundFlow $version Windows x64 CUDA
-          Author: fengjay01
+          Author: krisfengx
 
           This package includes a base Python runtime and a CUDA environment.
           NVIDIA driver is required for GPU acceleration.
           Users can switch backends or install additional environments in Settings.
           "@ | Set-Content "$stage/README.txt" -Encoding UTF8
-          $env:PYMSS_STUDIO_RUNTIME_ENVS_DIR = (Resolve-Path "$stage/python-runtime/runtime-envs").Path
-          $env:PYMSS_STUDIO_ACTIVE_RUNTIME_FILE = (Join-Path $env:PYMSS_STUDIO_RUNTIME_ENVS_DIR "active-runtime.json")
+          $env:SOUNDFLOW_RUNTIME_ENVS_DIR = (Resolve-Path "$stage/python-runtime/runtime-envs").Path
+          $env:SOUNDFLOW_ACTIVE_RUNTIME_FILE = (Join-Path $env:SOUNDFLOW_RUNTIME_ENVS_DIR "active-runtime.json")
           $activeStatePath = Join-Path $stage "python-runtime/runtime-envs/active-runtime.json"
           if (!(Test-Path $activeStatePath)) { throw "Staged CUDA active runtime state is missing" }
           $activeState = Get-Content -Raw $activeStatePath | ConvertFrom-Json
@@ -436,7 +436,7 @@ jobs:
           PYMSS_BUILD_TARGET: windows-x64
           PYMSS_BUILD_VARIANT: windows-x64-cpu
           PYMSS_BUILD_UPDATE_SUPPORTED: 'true'
-          PYMSS_BUILD_OFFICIAL: ${{ github.repository == 'fengjay01/SoundFlow' && github.repository_owner == 'fengjay01' && 'true' || 'false' }}
+          PYMSS_BUILD_OFFICIAL: ${{ github.repository == 'krisfengx/SoundFlow' && github.repository_owner == 'krisfengx' && 'true' || 'false' }}
         run: pnpm plugins:build --no-bundle
 
       - name: Download shared Windows bundled tools
@@ -452,7 +452,7 @@ jobs:
           $stage = "release/${{ steps.meta.outputs.stage_name }}"
           if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
-          Copy-Item "src-tauri/target/release/pymss-studio.exe" "$stage/SoundFlow.exe"
+          Copy-Item "src-tauri/target/release/soundflow.exe" "$stage/SoundFlow.exe"
           Copy-Item "python" "$stage/python" -Recurse
           Copy-Item "python-runtime" "$stage/python-runtime" -Recurse
           Copy-Item "release/bin" "$stage/bin" -Recurse
@@ -460,14 +460,14 @@ jobs:
            ./scripts/prepare-python-runtime.ps1 -RewriteRuntimeEnvConfigs -RuntimeEnvsDir "$stage/python-runtime/runtime-envs" -RuntimeDir "$stage/python-runtime"
           @"
           SoundFlow $version Windows x64 CPU
-          Author: fengjay01
+          Author: krisfengx
 
           This package includes a base Python runtime and a CPU environment.
           It is intended for users without NVIDIA CUDA GPUs.
           Users can switch backends or install additional environments in Settings.
           "@ | Set-Content "$stage/README.txt" -Encoding UTF8
-          $env:PYMSS_STUDIO_RUNTIME_ENVS_DIR = (Resolve-Path "$stage/python-runtime/runtime-envs").Path
-          $env:PYMSS_STUDIO_ACTIVE_RUNTIME_FILE = (Join-Path $env:PYMSS_STUDIO_RUNTIME_ENVS_DIR "active-runtime.json")
+          $env:SOUNDFLOW_RUNTIME_ENVS_DIR = (Resolve-Path "$stage/python-runtime/runtime-envs").Path
+          $env:SOUNDFLOW_ACTIVE_RUNTIME_FILE = (Join-Path $env:SOUNDFLOW_RUNTIME_ENVS_DIR "active-runtime.json")
           $activeStatePath = Join-Path $stage "python-runtime/runtime-envs/active-runtime.json"
           if (!(Test-Path $activeStatePath)) { throw "Staged CPU active runtime state is missing" }
           $activeState = Get-Content -Raw $activeStatePath | ConvertFrom-Json
@@ -596,7 +596,7 @@ jobs:
           PYMSS_BUILD_TARGET: windows-x64
           PYMSS_BUILD_VARIANT: windows-x64-managed
           PYMSS_BUILD_UPDATE_SUPPORTED: 'true'
-          PYMSS_BUILD_OFFICIAL: ${{ github.repository == 'fengjay01/SoundFlow' && github.repository_owner == 'fengjay01' && 'true' || 'false' }}
+          PYMSS_BUILD_OFFICIAL: ${{ github.repository == 'krisfengx/SoundFlow' && github.repository_owner == 'krisfengx' && 'true' || 'false' }}
         run: pnpm plugins:build --no-bundle
       - name: Download shared Windows bundled tools
         uses: actions/download-artifact@v4
@@ -609,7 +609,7 @@ jobs:
         run: |
           $stage = "release/${{ steps.meta.outputs.stage_name }}"
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
-          Copy-Item "src-tauri/target/release/pymss-studio.exe" "$stage/SoundFlow.exe"
+          Copy-Item "src-tauri/target/release/soundflow.exe" "$stage/SoundFlow.exe"
           Copy-Item "python" "$stage/python" -Recurse
           Copy-Item "python-runtime" "$stage/python-runtime" -Recurse
           Copy-Item "release/bin" "$stage/bin" -Recurse
@@ -765,7 +765,7 @@ jobs:
           PYMSS_BUILD_TARGET: windows-x64
           PYMSS_BUILD_VARIANT: windows-x64-rocm
           PYMSS_BUILD_UPDATE_SUPPORTED: 'true'
-          PYMSS_BUILD_OFFICIAL: ${{ github.repository == 'fengjay01/SoundFlow' && github.repository_owner == 'fengjay01' && 'true' || 'false' }}
+          PYMSS_BUILD_OFFICIAL: ${{ github.repository == 'krisfengx/SoundFlow' && github.repository_owner == 'krisfengx' && 'true' || 'false' }}
         run: pnpm plugins:build --no-bundle
       - name: Download shared Windows bundled tools
         uses: actions/download-artifact@v4
@@ -778,7 +778,7 @@ jobs:
         run: |
           $stage = "release/${{ steps.meta.outputs.stage_name }}"
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
-          Copy-Item "src-tauri/target/release/pymss-studio.exe" "$stage/SoundFlow.exe"
+          Copy-Item "src-tauri/target/release/soundflow.exe" "$stage/SoundFlow.exe"
           Copy-Item "python" "$stage/python" -Recurse
           Copy-Item "python-runtime" "$stage/python-runtime" -Recurse
           Copy-Item "release/bin" "$stage/bin" -Recurse
@@ -799,8 +799,8 @@ jobs:
           Requires Windows 11, a supported AMD GPU, and the matching AMD driver.
           Users can switch backends or install additional environments in Settings.
           "@ | Set-Content "$stage/README.txt" -Encoding UTF8
-          $env:PYMSS_STUDIO_RUNTIME_ENVS_DIR = (Resolve-Path "$stage/python-runtime/runtime-envs").Path
-          $env:PYMSS_STUDIO_ACTIVE_RUNTIME_FILE = (Join-Path $env:PYMSS_STUDIO_RUNTIME_ENVS_DIR "active-runtime.json")
+          $env:SOUNDFLOW_RUNTIME_ENVS_DIR = (Resolve-Path "$stage/python-runtime/runtime-envs").Path
+          $env:SOUNDFLOW_ACTIVE_RUNTIME_FILE = (Join-Path $env:SOUNDFLOW_RUNTIME_ENVS_DIR "active-runtime.json")
           $activeStatePath = Join-Path $stage "python-runtime/runtime-envs/active-runtime.json"
           if (!(Test-Path $activeStatePath)) { throw "Staged ROCm active runtime state is missing" }
           $activeState = Get-Content -Raw $activeStatePath | ConvertFrom-Json

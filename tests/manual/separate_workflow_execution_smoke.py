@@ -73,10 +73,10 @@ with tempfile.TemporaryDirectory(prefix="pymss-separate-workflow-") as temporary
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.add_init_script(
-        "localStorage.setItem('pymss-studio:app-settings', JSON.stringify(" + json.dumps({
+        "localStorage.setItem('soundflow:app-settings', JSON.stringify(" + json.dumps({
             "startupOnboardingSeen": True, "locale": "en", "themeMode": "light",
             "outputDir": str(directory / "outputs"), "clearInputAfterSubmit": False,
-        }) + ")); localStorage.setItem('pymss-studio:workflow-state', JSON.stringify(" + json.dumps(state) + "));"
+        }) + ")); localStorage.setItem('soundflow:workflow-state', JSON.stringify(" + json.dumps(state) + "));"
     )
     page.goto(args.url.rstrip("/") + "/#/?mode=workflow")
     page.wait_for_load_state("networkidle")
@@ -95,15 +95,15 @@ with tempfile.TemporaryDirectory(prefix="pymss-separate-workflow-") as temporary
                 window.__requests.push(JSON.parse(JSON.stringify(args.payload)));
                 return {taskId: args.payload.taskId, started: true};
               }
-              if (command === 'save_app_store') {localStorage.setItem('pymss-studio:' + args.name, JSON.stringify(args.data)); return;}
-              if (command === 'load_app_store') return JSON.parse(localStorage.getItem('pymss-studio:' + args.name) || 'null');
+              if (command === 'save_app_store') {localStorage.setItem('soundflow:' + args.name, JSON.stringify(args.data)); return;}
+              if (command === 'load_app_store') return JSON.parse(localStorage.getItem('soundflow:' + args.name) || 'null');
               if (command === 'mutate_workflow_store') {
-                const state = JSON.parse(localStorage.getItem('pymss-studio:workflow-state'));
+                const state = JSON.parse(localStorage.getItem('soundflow:workflow-state'));
                 const entry = args.payload.entry;
                 const index = state.workflows.findIndex(item => item.id === entry.id);
                 if (index < 0) state.workflows.push(entry); else state.workflows[index] = entry;
                 state.selectedWorkflowId = entry.id;
-                localStorage.setItem('pymss-studio:workflow-state', JSON.stringify(state));
+                localStorage.setItem('soundflow:workflow-state', JSON.stringify(state));
                 return {state};
               }
               if (command === 'collect_audio_inputs') return window.__inputFiles || [];

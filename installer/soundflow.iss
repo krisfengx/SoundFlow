@@ -3,7 +3,7 @@
 
 #define MyAppName "SoundFlow"
 #define MyAppVersion GetEnv("PYMSS_VERSION") == "" ? "0.0.1" : GetEnv("PYMSS_VERSION")
-#define MyAppPublisher "fengjay01"
+#define MyAppPublisher "krisfengx"
 #define MyAppExeName "SoundFlow.exe"
 #define SourceDir GetEnv("PYMSS_PORTABLE_DIR")
 #define OutputDir GetEnv("PYMSS_INSTALLER_OUTPUT") == "" ? "..\release" : GetEnv("PYMSS_INSTALLER_OUTPUT")
@@ -82,7 +82,7 @@ end;
 
 function IsFreshInstall(): Boolean;
 begin
-  Result := not FileExists(ExpandConstant('{app}\pymss-studio.inno-install'));
+  Result := not FileExists(ExpandConstant('{app}\soundflow.inno-install'));
 end;
 
 function CachedFreshInstall(): Boolean;
@@ -208,6 +208,6 @@ begin
   begin
     RepairBundledRuntimeEnvs();
     CleanupInstallTree();
-    SaveStringToFile(ExpandConstant('{app}') + '\pymss-studio.inno-install', 'managed' + #13#10, False);
+    SaveStringToFile(ExpandConstant('{app}') + '\soundflow.inno-install', 'managed' + #13#10, False);
   end;
 end;

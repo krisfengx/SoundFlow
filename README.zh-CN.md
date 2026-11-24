@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  基于 <a href="https://github.com/pymss-project/pymss-studio">Pymss Studio</a> 构建的独立桌面项目，扩展了完整的歌词链路。
+  基于 <a href="https://github.com/pymss-project/pymss-studio">上游桌面项目</a> 构建的独立桌面项目，扩展了完整的歌词链路。
 </p>
 
 <p align="center">
@@ -23,9 +23,9 @@
 <p align="center">
   <a href="./README.md">English</a>
   ·
-  <a href="https://github.com/fengjay01/SoundFlow">GitHub 仓库</a>
+  <a href="https://github.com/krisfengx/SoundFlow">GitHub 仓库</a>
   ·
-  <a href="https://github.com/fengjay01/SoundFlow/issues">问题反馈</a>
+  <a href="https://github.com/krisfengx/SoundFlow/issues">问题反馈</a>
   ·
   <a href="https://github.com/pymss-project/pymss-studio/releases">上游发行版</a>
   ·
@@ -45,12 +45,12 @@
 
 ## 项目介绍
 
-SoundFlow 是在 [Pymss Studio](https://github.com/pymss-project/pymss-studio) 基础上构建的独立桌面项目，核心新增是一条**端到端的歌词时间轴制作链路**。上游桌面应用（Tauri + Vue + Python Worker，围绕 [pymss](https://github.com/pymss-project/pymss) 分离引擎）完整保留：模型库、分离任务、工作流、音轨编辑器、音频工具与插件市场。新增的**歌词**页面把音频与 LRC / 纯文本 / ASR 听写结果送入强制对齐，支持逐字编辑，并导出 LRC、TTML、SRT、KRC、ASS、JSON 与独立 HTML 播放器。
+SoundFlow 是在 [上游桌面项目](https://github.com/pymss-project/pymss-studio) 基础上构建的独立桌面项目，核心新增是一条**端到端的歌词时间轴制作链路**。上游桌面应用（Tauri + Vue + Python Worker，围绕 [pymss](https://github.com/pymss-project/pymss) 分离引擎）完整保留：模型库、分离任务、工作流、音轨编辑器、音频工具与插件市场。新增的**歌词**页面把音频与 LRC / 纯文本 / ASR 听写结果送入强制对齐，支持逐字编辑，并导出 LRC、TTML、SRT、KRC、ASS、JSON 与独立 HTML 播放器。
 
 分离与对齐均在本机进行。首次准备运行环境、模型或可选组件时需要联网；准备完成后可使用已下载的模型处理本地音频。
 
 > [!NOTE]
-> 本项目**不是上游官方发行版**。自 v0.1.0 起，预编译桌面安装包发布在 [GitHub Releases 页面](https://github.com/fengjay01/SoundFlow/releases)，也可以按[开发者快速开始](#开发者快速开始)从源码运行。为兼容升级，以下历史标识保持不变：`PYMSS_STUDIO_*` 环境变量、`pymss-studio:` 设置前缀、Tauri 标识符，以及 `pymss` / `pymss-core` 包名。
+> 本项目**不是上游官方发行版**。自 v0.1.0 起，预编译桌面安装包发布在 [GitHub Releases 页面](https://github.com/krisfengx/SoundFlow/releases)，也可以按[开发者快速开始](#开发者快速开始)从源码运行。本项目的环境变量前缀、设置前缀、Tauri 标识符、可执行文件名和数据目录均已统一为 SoundFlow；仅 `pymss` / `pymss-core` 作为上游核心包名保留。
 
 [开发者快速开始](#开发者快速开始) · [功能](#核心功能) · [歌词工作台](#歌词工作台) · [获取与安装](#获取与安装) · [快速上手](#快速上手) · [预览](#界面预览) · [常见问题](#常见问题) · [开发](#开发与验证)
 
@@ -98,7 +98,7 @@ sudo apt-get install -y python3.12 python3.12-venv  # Python 3.12（Ubuntu 22.04
 ### 2. 克隆、启动与验证
 
 ```bash
-git clone https://github.com/fengjay01/SoundFlow.git && cd SoundFlow
+git clone https://github.com/krisfengx/SoundFlow.git && cd SoundFlow
 corepack pnpm dev:setup:desktop   # 装依赖 + 建 .venv/bootstrap（Python 3.12 + requests[socks]）+ 自检
 corepack pnpm dev:desktop         # Tauri 窗口 + 前端热更新 + Rust / Python Worker
 corepack pnpm test:all            # 一次跑完三层验证
@@ -137,13 +137,13 @@ corepack pnpm test:frontend && corepack pnpm build  # 前端测试 + 构建
 | 音频工具 | 格式转换、音频信息、SDR / SI-SDR、ASR、歌声转 MIDI、静音切片和音频合并。 |
 | 运行环境与设置 | 管理 CPU、CUDA、ROCm 和 MLX 等平台适用环境；配置下载源、代理、并发数、存储目录、语言、缩放及主题。 |
 
-前两行为 SoundFlow 新增能力，其余模块继承自上游 Pymss Studio。
+前两行为 SoundFlow 新增能力，其余模块继承自上游 SoundFlow。
 
 不同模型的可用音轨、参数和运行设备可能不同，请以模型详情和当前运行环境为准。显卡加速效果取决于模型、硬件、驱动和任务配置。
 
 ## 歌词工作台
 
-在侧边栏打开**歌词**，包含三个标签：**工作台**、**编辑台**、**模型管理**。这是 SoundFlow 的主要新增能力，应用内其余模块均继承自上游 Pymss Studio。
+在侧边栏打开**歌词**，包含三个标签：**工作台**、**编辑台**、**模型管理**。这是 SoundFlow 的主要新增能力，应用内其余模块均继承自上游 SoundFlow。
 
 ### 处理流程
 
@@ -191,9 +191,9 @@ corepack pnpm test:frontend && corepack pnpm build  # 前端测试 + 构建
 
 ## 获取与安装
 
-自 v0.1.0 起，预编译桌面安装包发布在 [GitHub Releases 页面](https://github.com/fengjay01/SoundFlow/releases)。选择与平台匹配的资产，阅读发行说明并查看 **Assets**。也可以按[开发者快速开始](#开发者快速开始)从源码运行。
+自 v0.1.0 起，预编译桌面安装包发布在 [GitHub Releases 页面](https://github.com/krisfengx/SoundFlow/releases)。选择与平台匹配的资产，阅读发行说明并查看 **Assets**。也可以按[开发者快速开始](#开发者快速开始)从源码运行。
 
-发布流水线沿用上游 Pymss Studio 的打包模式：GitHub Actions 通过单个 `workflow_dispatch` 构建平台矩阵，产出 Windows 安装版与便携版、Apple Silicon macOS 的 DMG，以及 Linux x64 的 AppImage。每个 Windows 包内置对应推理运行环境；保留旧包标识符以兼容升级。
+发布流水线参考上游项目的打包模式：GitHub Actions 通过单个 `workflow_dispatch` 构建平台矩阵，产出 Windows 安装版与便携版、Apple Silicon macOS 的 DMG，以及 Linux x64 的 AppImage。每个 Windows 包内置对应推理运行环境。
 
 > [!NOTE]
 > 所有平台的发布包由同一工作流构建。升级前请阅读对应发行说明，并备份重要工程及设置。无法访问 GitHub 时，请查看发行说明中的镜像入口。
@@ -243,7 +243,7 @@ xattr -cr '/Applications/SoundFlow.app'
 
 ## 界面预览
 
-前两行展示 SoundFlow 新增的**歌词**工作台；其余截图来自继承自上游的界面，因此画面中仍显示旧名称 **Pymss Studio**。中英双语、浅色与深色预览统一为 1920 × 1080，点击图片可查看完整尺寸。
+前两行展示 SoundFlow 新增的**歌词**工作台；其余截图展示继承自上游的界面。中英双语、浅色与深色预览统一为 1920 × 1080，点击图片可查看完整尺寸。
 
 | 功能 | 浅色主题 | 深色主题 |
 | --- | --- | --- |
@@ -315,20 +315,22 @@ ASR 的 FunASR 运行组件按需安装，模型首次使用时下载并缓存�
 
 | 使用方式 | 默认数据根目录 |
 | --- | --- |
-| 设置 `PYMSS_STUDIO_DATA_ROOT` | 优先使用指定路径。 |
-| 从 Cargo `target/debug` 或 `target/release` 直接运行开发产物 | 项目根目录下的 `data/`。 |
-| Windows 便携版，程序同级有 `pymss-studio.portable` 标记 | 程序同级的 `data/`。 |
-| 普通安装版 / 其他发布包 | 用户目录下的 `.pymss-studio/`，例如 Windows 的 `%USERPROFILE%\.pymss-studio`。 |
+| 设置 `SOUNDFLOW_DATA_ROOT` | 优先使用指定路径。 |
+| 从 Cargo `target/debug` 或 `target/release` 直接运行开发产物 | 项目根目录下的 `.soundflow/`。 |
+| Windows 便携版，程序同级有 `soundflow.portable` 标记 | 程序同级的 `.soundflow/`。 |
+| 普通安装版 / 其他发布包 | 安装目录下、与可执行文件同级的 `.soundflow/`。 |
 
-数据根目录默认包含 `settings/`、`models/`、`outputs/`、`editor-projects/`、`logs/` 和 `temp/`。macOS 和 Linux 的可写运行状态保存在该根目录下的 `runtime-envs/`：`active-runtime.json` 记录当前核心，`.overlays/` 保存核心更新及其依赖，`optional-packages/` 保存独立组件，`pymss-runtime-state.json` 记录各后端的 `lyricsReady` 歌词就绪标志。Windows 继续使用所选运行时根目录下的 `runtime-envs/`，通常位于安装资源旁的 `python-runtime/runtime-envs/`。macOS 的基础 Python 环境保留在应用包内。
+旧版根目录（开发/便携版程序同级的 `data/`，以及安装版的 `%USERPROFILE%\.soundflow`）存在时会被自动沿用，因此升级不会丢失设置、模型和产物。`SOUNDFLOW_*` 变量名、`soundflow:` 设置前缀及便携版标记仍是升级兼容用的历史标识。数据根目录可在 **设置 → 数据目录** 修改；选择保存在根目录之外的指针文件中，重启后生效。
 
-**歌词模型使用独立目录树。** SoundFlow 将其存放在数据根目录下的 `models/_tool_models/lyrics/models/{asr,alignment,diarization,separation}/`，与分离模型使用的 `models/` 目录互不干扰，可在**歌词 → 模型管理**中维护。`PYMSS_STUDIO_*` 变量名与 `pymss-studio:` 设置前缀是为升级兼容保留的历史标识。
+数据根目录默认包含 `settings/`、`models/`、`outputs/`、`editor-projects/`、`logs/` 和 `temp/`。macOS 和 Linux 的可写运行状态保存在该根目录下的 `runtime-envs/`：`active-runtime.json` 记录当前核心，`.overlays/` 保存核心更新及其依赖，`optional-packages/` 保存独立组件，`pymss-runtime-state.json` 记录各后端的 `lyricsReady` 歌词就绪标志。Windows 的运行环境默认位于安装目录下 `.venv/python/runtime-envs/`；已有的 `python-runtime/runtime-envs/` 或数据根内布局会被自动沿用。macOS 的基础 Python 环境保留在应用包内。
+
+**歌词模型使用独立目录树。** SoundFlow 将其存放在数据根目录下的 `models/_tool_models/lyrics/models/{asr,alignment,diarization,separation}/`，与分离模型使用的 `models/` 目录互不干扰，可在**歌词 → 模型管理**中维护。`SOUNDFLOW_*` 变量名与 `soundflow:` 设置前缀是为升级兼容保留的历史标识。
 
 **编辑器工程会引用音频素材的文件路径。** 备份工程时也应保留对应音频；移动或删除原始输出后，可在编辑器中重连缺失素材。调整模型目录时优先使用应用提供的目录迁移流程。
 
 ### 更新与环境管理
 
-在 **设置 → 关于** 查看版本与更新状态。发布通道支持应用内更新的 Windows 和 macOS 构建可在此检查并安装更新；不支持自动更新的构建通过发行页手动更新。macOS 应用更新会整体替换 `.app` 并保留用户数据，写入权限不足时请求管理员授权。更新前应将应用移入 `/Applications`；从只读 DMG 或 App Translocation 位置运行时会阻止更新。固定基础环境契约发生变化时，需要手动安装新版。**相关链接**按来源分组：本项目（SoundFlow 仓库与问题反馈）、上游项目（Pymss Studio 桌面端与 pymss 核心仓库），以及桌面端 / 核心库的 AGPL-3.0 许可证。
+在 **设置 → 关于** 查看版本与更新状态。发布通道支持应用内更新的 Windows 和 macOS 构建可在此检查并安装更新；不支持自动更新的构建通过发行页手动更新。macOS 应用更新会整体替换 `.app` 并保留用户数据，写入权限不足时请求管理员授权。更新前应将应用移入 `/Applications`；从只读 DMG 或 App Translocation 位置运行时会阻止更新。固定基础环境契约发生变化时，需要手动安装新版。**相关链接**按来源分组：本项目（SoundFlow 仓库与问题反馈）、上游项目（上游桌面端与 pymss 核心仓库），以及桌面端 / 核心库的 AGPL-3.0 许可证。
 
 在 **设置 → 运行环境** 中，可独立更新 `pymss`、`pymss-core` 及其兼容依赖，无需更新桌面软件。确认前会展示版本和依赖计划，软件包先安装到新的核心覆盖层，验证成功后才切换；存在兼容的上一版时可回退。需要替换固定加速组件的更新会被拒绝，当前环境保持可用。依赖组合由 [`python/runtime-manifest.json`](./python/runtime-manifest.json) 定义。
 
@@ -336,7 +338,7 @@ ASR 的 FunASR 运行组件按需安装，模型首次使用时下载并缓存�
 
 FunASR 等可选组件使用独立目录，与核心覆盖层分别管理。安装时校验与当前 PyTorch 版本及加速后端的兼容性。Windows 和 Linux 卸载 FunASR 时，会删除独立组件目录，并卸载直接安装在当前环境中的副本，保留已下载的模型。macOS 的组件管理不卸载内置基础环境中的包，ASR 工具仍未开放。pip 和 Numba 缓存保存在数据根目录的 `temp/` 下（dev 构建由 `dev-env.mjs` 把 pip 缓存注入到 `.venv/cache/pip`）。
 
-在 macOS 上删除 `SoundFlow.app`（或上游的 `Pymss Studio.app`）会移除应用及内置环境，用户数据根目录中的设置、模型、输出和核心覆盖层继续保留，因此重新安装后会复用原有数据。自定义模型或输出目录，以及应用同级的 `.pymss-studio-previous-*.app` 更新备份，需要单独管理。
+在 macOS 上删除 `SoundFlow.app`（或旧版安装）会移除应用及内置环境，用户数据根目录中的设置、模型、输出和核心覆盖层继续保留，因此重新安装后会复用原有数据。自定义模型或输出目录，以及应用同级的 `.soundflow-previous-*.app` 更新备份，需要单独管理。
 
 ## 常见问题
 
@@ -363,15 +365,15 @@ FunASR 等可选组件使用独立目录，与核心覆盖层分别管理。安�
 
 自动错误报告会合并 5 秒内的连续异常并补写最新错误和堆栈，正常退出前会保存尚未写入的异常。清空日志时会取消旧的待写报告。
 
-如果启动后没有窗口，先退出已有的 SoundFlow 进程，在安装或构建目录打开 CMD，使用 `--debug` 在界面加载前开启本次运行的详细日志（源码构建运行 `pnpm dev:desktop` 并查看终端输出）。下面的命令使用上游发布包名称 `Pymss Studio.exe`，本地构建产物名为 `SoundFlow.exe`：
+如果启动后没有窗口，先退出已有的 SoundFlow 进程，在安装或构建目录打开 CMD，使用 `--debug` 在界面加载前开启本次运行的详细日志（源码构建运行 `pnpm dev:desktop` 并查看终端输出）。下面的命令使用 `SoundFlow.exe`：
 
 ```cmd
-start "" /b /wait "Pymss Studio.exe" --debug
+start "" /b /wait "SoundFlow.exe" --debug
 ```
 
-需要保存终端输出时，执行 `start "" /b /wait "Pymss Studio.exe" --debug > "%TEMP%\pymss-startup.log" 2>&1`。该参数会同步开启 SoundFlow 和 Worker 的详细日志，不修改已保存的开发者模式设置；退出后再次正常启动即恢复原有日志等级。已有进程需要退出后重新带参数启动。macOS 和 Linux 可直接向应用可执行文件传入 `--debug`。
+需要保存终端输出时，执行 `start "" /b /wait "SoundFlow.exe" --debug > "%TEMP%\soundflow-startup.log" 2>&1`。该参数会同步开启 SoundFlow 和 Worker 的详细日志，不修改已保存的开发者模式设置；退出后再次正常启动即恢复原有日志等级。已有进程需要退出后重新带参数启动。macOS 和 Linux 可直接向应用可执行文件传入 `--debug`。
 
-问题仍存在时，请在 [GitHub Issues](https://github.com/fengjay01/SoundFlow/issues) 提供版本与包类型、系统版本、GPU 型号、模型名称、复现步骤和相关日志片段。提交前移除日志中的个人路径、代理凭据等敏感信息。
+问题仍存在时，请在 [GitHub Issues](https://github.com/krisfengx/SoundFlow/issues) 提供版本与包类型、系统版本、GPU 型号、模型名称、复现步骤和相关日志片段。提交前移除日志中的个人路径、代理凭据等敏感信息。
 
 ## 开发与验证
 
@@ -379,7 +381,7 @@ start "" /b /wait "Pymss Studio.exe" --debug
 
 命令见顶部[开发者快速开始](#开发者快速开始)。版本契约：[`setup/toolchain.json`](./setup/toolchain.json)（Node 22 / pnpm 10.33.2 / Python 3.12 / Rust stable），`package.json` 的 `engines` / `packageManager` 与 `.nvmrc` 均与之对齐；`pnpm test:all` 用同样版本跑完三层验证。完整路径与缓存契约见 [`setup/README.md`](./setup/README.md)。
 
-三端差异只有两处：Tauri 系统依赖的安装命令、venv 解释器路径（`.venv/bootstrap/Scripts/python.exe` vs `.venv/bootstrap/bin/python`），后者由 `dev-env.mjs` 按 `process.platform` 处理。`pnpm dev:desktop` 把环境类缓存（pip / cargo / npm / pnpm / XDG / 临时目录）pin 进项目内 `.venv/`，而可能存放模型权重的缓存（HF / torch.hub / ModelScope）落到 `data/models/_cache/`，全部都在仓库内，**不写系统盘**；解释器可用 `PYMSS_STUDIO_PYTHON` 覆盖。中国网络策略是可选的：`SOUNDFLOW_CN_NETWORK=1` 才启用镜像，默认不改动开发者的代理设置。
+三端差异只有两处：Tauri 系统依赖的安装命令、venv 解释器路径（`.venv/bootstrap/Scripts/python.exe` vs `.venv/bootstrap/bin/python`），后者由 `dev-env.mjs` 按 `process.platform` 处理。`pnpm dev:desktop` 把环境类缓存（pip / cargo / npm / pnpm / XDG / 临时目录）pin 进项目内 `.venv/`，而可能存放模型权重的缓存（HF / torch.hub / ModelScope）落到 `data/models/_cache/`，全部都在仓库内，**不写系统盘**；解释器可用 `SOUNDFLOW_PYTHON` 覆盖。中国网络策略是可选的：`SOUNDFLOW_CN_NETWORK=1` 才启用镜像，默认不改动开发者的代理设置。
 
 **路径契约。** 所有默认落点都由代码位置推导 —— [`python/_project_paths.py`](./python/_project_paths.py) 用 `__file__`、Rust 用 `CARGO_MANIFEST_DIR`、Node 用 `import.meta.url` —— 不把用户目录当默认值，环境变量只作覆盖。分层判据只有一条「这个目录会不会出现模型权重」：会 → `data/models/_cache/`，不会 → `.venv/`。调试脚本与产物经 [`scripts/debug_paths.py`](./scripts/debug_paths.py) 的 `debug_out()` 统一写入仓库根内 `_debug_output/`，且不会进提交。`pnpm env:paths` 可查看并断言所有注入路径；`pnpm env:paths` 与 `pnpm env:doctor` 都包含 `paths-local` 断言，出现越界即失败。
 
@@ -432,13 +434,13 @@ pnpm worker -- env_info
 pnpm worker -- list_models --payload '{}'
 ```
 
-`pnpm worker` 走 `dev-env.mjs` 解析出的解释器（优先 `PYMSS_STUDIO_PYTHON` → `.venv/bootstrap` → 历史 Windows 布局 → 系统 Python），三端一致；也可直接 `node scripts/dev-env.mjs python -- <参数>`。检查发布包时应改用包内或已激活环境的 Python 路径。
+`pnpm worker` 走 `dev-env.mjs` 解析出的解释器（优先 `SOUNDFLOW_PYTHON` → `.venv/bootstrap` → 历史 Windows 布局 → 系统 Python），三端一致；也可直接 `node scripts/dev-env.mjs python -- <参数>`。检查发布包时应改用包内或已激活环境的 Python 路径。
 
 | 变量 | 说明 |
 | --- | --- |
-| `PYMSS_STUDIO_DATA_ROOT` | 覆盖应用数据根目录。 |
-| `PYMSS_STUDIO_PYTHON` | 覆盖引导 Python 解释器；`dev-env.mjs` 未命中覆盖时依次查找 `.venv/bootstrap`、历史 Windows 布局、系统 `python3.12` / `python3` / `python`（Windows 另有 `py`）。推理仍可使用已激活环境。 |
-| `PYMSS_STUDIO_DEFAULT_OUTPUT_DIR` | Worker 未显式指定输出时的默认目录；桌面应用会将当前配置的输出目录传给 Worker。 |
+| `SOUNDFLOW_DATA_ROOT` | 覆盖应用数据根目录。 |
+| `SOUNDFLOW_PYTHON` | 覆盖引导 Python 解释器；`dev-env.mjs` 未命中覆盖时依次查找 `.venv/bootstrap`、历史 Windows 布局、系统 `python3.12` / `python3` / `python`（Windows 另有 `py`）。推理仍可使用已激活环境。 |
+| `SOUNDFLOW_DEFAULT_OUTPUT_DIR` | Worker 未显式指定输出时的默认目录；桌面应用会将当前配置的输出目录传给 Worker。 |
 
 </details>
 
@@ -498,14 +500,14 @@ SoundFlow 沿用上游的打包模式：Windows 发布流程准备基础 Python 
 
 - 完成 STARS 对齐引擎接入，稳定可选的 TIFA 适配器，扩展多语种强制对齐能力。
 - 补充歌词页截图、正式发布包，以及“导入 → 对齐 → 编辑 → 再导出”的应用内闭环。
-- 上游路线（Intel / AMD 兼容性、运行环境校验、移动端 GPU / NPU 研究）继续由 [Pymss Studio](https://github.com/pymss-project/pymss-studio) 推进，本项目不提供移动端构建。
+- 上游路线（Intel / AMD 兼容性、运行环境校验、移动端 GPU / NPU 研究）继续由 [上游桌面项目](https://github.com/pymss-project/pymss-studio) 推进，本项目不提供移动端构建。
 
 ## 交流与贡献
 
-SoundFlow 自身的问题（歌词链路、本地启动脚本、文档）请提交到 [GitHub Issues](https://github.com/fengjay01/SoundFlow/issues)。继承自上游的分离 / 运行环境问题，建议先查[上游 Issues](https://github.com/pymss-project/pymss-studio/issues)；通用使用讨论可见[上游 Discussions](https://github.com/pymss-project/pymss-studio/discussions) 与中文[上游交流群](https://qm.qq.com/q/YLLou4NucE)。
+SoundFlow 自身的问题（歌词链路、本地启动脚本、文档）请提交到 [GitHub Issues](https://github.com/krisfengx/SoundFlow/issues)。继承自上游的分离 / 运行环境问题，建议先查[上游 Issues](https://github.com/pymss-project/pymss-studio/issues)；通用使用讨论可见[上游 Discussions](https://github.com/pymss-project/pymss-studio/discussions) 与中文[上游交流群](https://qm.qq.com/q/YLLou4NucE)。
 
 本项目目前以问题反馈、复现报告和文档修正为主，暂不承接常态化的外部 Pull Request；贡献方式请直接参考上面的 Issues 入口。
 
 ## 许可证
 
-SoundFlow 源自 Pymss Studio，沿用 GNU Affero General Public License v3.0，详见 [LICENSE](./LICENSE)。歌词链路记录了参考 [6hdj/lrc-ttml](https://github.com/6hdj/lrc-ttml)（MIT）的迁移映射；依赖、模型权重和第三方工具遵循各自的许可证与使用条件（TIFA 模型为 CC BY-NC-SA，Meta MMS-FA 权重为 CC BY-NC 4.0，两者均不可商用）。
+SoundFlow 源自上游桌面项目，沿用 GNU Affero General Public License v3.0，详见 [LICENSE](./LICENSE)。歌词链路记录了参考 [6hdj/lrc-ttml](https://github.com/6hdj/lrc-ttml)（MIT）的迁移映射；依赖、模型权重和第三方工具遵循各自的许可证与使用条件（TIFA 模型为 CC BY-NC-SA，Meta MMS-FA 权重为 CC BY-NC 4.0，两者均不可商用）。

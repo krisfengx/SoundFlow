@@ -18,7 +18,7 @@ def executable_path(path: Path) -> Path:
     if path.is_dir() and path.suffix == ".app":
         with (path / "Contents/Info.plist").open("rb") as source:
             info = plistlib.load(source)
-        if info.get("CFBundleIdentifier") != "studio.pymss.desktop":
+        if info.get("CFBundleIdentifier") != "studio.soundflow.desktop":
             raise ValueError(
                 "The staged application does not use the production bundle identifier"
             )
@@ -108,7 +108,7 @@ def verify(executable: Path, platform: str, timeout: float = 15) -> dict:
     expected = {"vst2", "vst3"} | ({"au"} if platform == "macos" else set())
     with tempfile.TemporaryDirectory(prefix="pymss-plugin-package-") as temporary:
         environment = dict(
-            os.environ, PYMSS_STUDIO_DATA_ROOT=str(Path(temporary) / "data")
+            os.environ, SOUNDFLOW_DATA_ROOT=str(Path(temporary) / "data")
         )
         capabilities = run_helper(
             [str(executable), "--plugin-host-capabilities"], None, environment, timeout

@@ -111,7 +111,7 @@ with sync_playwright() as playwright:
                  'formatVersion': 1, 'createdAt': 1, 'updatedAt': 1}
         state = {'app-settings': {'startupOnboardingSeen': True, 'locale': 'zh-CN', 'themeMode': 'light'},
                  'workflow-state': {'workflows': [entry], 'selectedWorkflowId': case}}
-        page.add_init_script('for(const [key,value] of Object.entries('+json.dumps(state)+')) localStorage.setItem("pymss-studio:"+key,JSON.stringify(value));')
+        page.add_init_script('for(const [key,value] of Object.entries('+json.dumps(state)+')) localStorage.setItem("soundflow:"+key,JSON.stringify(value));')
         page.goto(args.url + '/#/workflow-node-editor?workflowId=' + case)
         page.wait_for_load_state('networkidle')
         page.add_style_tag(content='.title-bar{display:none!important}')
@@ -165,7 +165,7 @@ with sync_playwright() as playwright:
             "elements => elements.map(el => el.dataset.nodeLog)") == expected_order
         expect(modal.locator('[data-node-log="1"]')).to_have_attribute('data-node-status', 'failed' if expected_exit else 'done')
         page.screenshot(path=str(artifacts / (case + '-nodes.png')), animations='disabled')
-        page.wait_for_function("JSON.parse(localStorage.getItem('pymss-studio:task-history') || '{}').tasks?.[0]?.nodeExecutionOrder?.length > 0")
+        page.wait_for_function("JSON.parse(localStorage.getItem('soundflow:task-history') || '{}').tasks?.[0]?.nodeExecutionOrder?.length > 0")
         page.reload()
         page.wait_for_load_state('networkidle')
         page.add_style_tag(content='.title-bar{display:none!important}')

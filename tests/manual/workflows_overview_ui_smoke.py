@@ -92,10 +92,10 @@ with sync_playwright() as playwright:
     page.add_init_script(
         f"""(() => {{
           localStorage.setItem(
-            'pymss-studio:app-settings',
+            'soundflow:app-settings',
             JSON.stringify({{ startupOnboardingSeen: true, locale: 'en', themeAccent: 'teal' }}),
           )
-          localStorage.setItem('pymss-studio:workflow-state', JSON.stringify({json.dumps(workflow_state)}))
+          localStorage.setItem('soundflow:workflow-state', JSON.stringify({json.dumps(workflow_state)}))
         }})()"""
     )
     page.goto(args.url + '/#/workflows')
@@ -115,7 +115,7 @@ with sync_playwright() as playwright:
     expect(page.locator('.workflow-preview__links path')).to_have_count(3)
     expect(page.locator('.wf-param')).to_have_count(0)
     expect(page.get_by_role('button', name='Open Editor', exact=True)).to_be_visible()
-    before = page.evaluate("localStorage.getItem('pymss-studio:workflow-state')")
+    before = page.evaluate("localStorage.getItem('soundflow:workflow-state')")
     original_view = page.locator('.workflow-preview__canvas').get_attribute('viewBox')
     page.get_by_role('button', name='Zoom in preview', exact=True).click()
     assert original_view != page.locator('.workflow-preview__canvas').get_attribute('viewBox')
@@ -146,7 +146,7 @@ with sync_playwright() as playwright:
     page.mouse.up()
     assert original_view != page.locator('.workflow-preview__canvas').get_attribute('viewBox')
     page.get_by_role('button', name='Fit view', exact=True).click()
-    assert before == page.evaluate("localStorage.getItem('pymss-studio:workflow-state')")
+    assert before == page.evaluate("localStorage.getItem('soundflow:workflow-state')")
     page.screenshot(animations='disabled', path=str(output / 'workflows-preview-advanced.png'), full_page=True)
 
     def check_more_menu(keyboard=False, corner=False):
@@ -211,10 +211,10 @@ with sync_playwright() as playwright:
     long_description = '\n\n'.join(f'Line {index}: vocal processing notes and output routing details.' for index in range(35))
     page.get_by_label('Description', exact=True).fill(long_description)
     page.get_by_label('Description', exact=True).press('Tab')
-    page.wait_for_function("value => JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows.find(w => w.id === 'simple').description === value", arg=long_description)
+    page.wait_for_function("value => JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows.find(w => w.id === 'simple').description === value", arg=long_description)
     page.locator('.wf-param .n-select').nth(1).click()
     page.get_by_text('FLAC', exact=True).click()
-    page.wait_for_function("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows.find(w => w.id === 'simple').definition.defaults.output_format === 'flac'")
+    page.wait_for_function("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows.find(w => w.id === 'simple').definition.defaults.output_format === 'flac'")
     page.screenshot(animations='disabled', path=str(output / 'workflows-preview-settings.png'), full_page=True)
     page.keyboard.press('Escape')
     expect(page.locator('.wf-settings')).not_to_be_visible()
@@ -229,7 +229,7 @@ with sync_playwright() as playwright:
     expect(page.get_by_label('Description', exact=True)).to_have_value(long_description)
     page.get_by_label('Description', exact=True).fill('A compact two-stem workflow.')
     page.get_by_label('Description', exact=True).press('Tab')
-    page.wait_for_function("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows.find(w => w.id === 'simple').description === 'A compact two-stem workflow.'")
+    page.wait_for_function("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows.find(w => w.id === 'simple').description === 'A compact two-stem workflow.'")
     long_name = 'Long workflow name ' * 30 + 'end'
     page.get_by_label('Name', exact=True).fill(long_name)
     page.get_by_label('Name', exact=True).press('Tab')

@@ -568,10 +568,10 @@ class LegacyWorkflowInputTests(unittest.TestCase):
 
         transient, inputs = _prepare_legacy_global_input(payload, "D:/Audio/song.wav", None)
 
-        self.assertEqual(inputs, {"__pymss_studio_global_input__": "D:/Audio/song.wav"})
+        self.assertEqual(inputs, {"__soundflow_global_input__": "D:/Audio/song.wav"})
         self.assertEqual(
             transient["workflow"]["nodes"][0]["widgets_values"],
-            ["old-folder", False, True, "__pymss_studio_global_input__"],
+            ["old-folder", False, True, "__soundflow_global_input__"],
         )
 
     def test_yaml_workflows_keep_the_original_payload_and_inputs(self) -> None:
@@ -986,7 +986,7 @@ class WorkflowOutputMetadataTests(unittest.TestCase):
     def test_simple_output_paths_restore_unicode_names_after_graph_sanitizing(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output_dir = Path(directory)
-            generated = output_dir / "pymss_studio_0001.wav"
+            generated = output_dir / "soundflow_0001.wav"
             generated.write_bytes(b"audio")
             finalized = _finalize_simple_output_paths(
                 [str(generated)],

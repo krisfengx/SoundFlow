@@ -2729,41 +2729,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pymss-studio"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "chrono",
- "flate2",
- "libc",
- "minisign-verify",
- "percent-encoding",
- "pymss-audio-host",
- "reqwest",
- "rustfft",
- "rustls",
- "semver",
- "serde",
- "serde_json",
- "sha2",
- "tar",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-process",
- "tauri-plugin-shell",
- "tauri-plugin-store",
- "tauri-plugin-updater",
- "tempfile",
- "thiserror 2.0.18",
- "toml 0.9.12+spec-1.1.0",
- "trash",
- "url",
- "windows-sys 0.60.2",
- "zip 2.4.2",
-]
-
-[[package]]
 name = "pymss-vst2-host"
 version = "0.1.0"
 dependencies = [
@@ -3538,6 +3503,41 @@ dependencies = [
  "vst3",
  "windows-sys 0.61.2",
  "x11-dl",
+]
+
+[[package]]
+name = "soundflow"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "chrono",
+ "flate2",
+ "libc",
+ "minisign-verify",
+ "percent-encoding",
+ "pymss-audio-host",
+ "reqwest",
+ "rustfft",
+ "rustls",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tar",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-process",
+ "tauri-plugin-shell",
+ "tauri-plugin-store",
+ "tauri-plugin-updater",
+ "tempfile",
+ "thiserror 2.0.18",
+ "toml 0.9.12+spec-1.1.0",
+ "trash",
+ "url",
+ "windows-sys 0.60.2",
+ "zip 2.4.2",
 ]
 
 [[package]]

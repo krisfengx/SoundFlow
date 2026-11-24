@@ -19,10 +19,10 @@ from worker_runtime_artifacts import (  # noqa: E402
 )
 
 PROVIDERS = {
-    "huggingface": ("HuanLin/Pymss-Studio-Dist", "main", "HF_TOKEN",
-                    "https://huggingface.co/datasets/HuanLin/Pymss-Studio-Dist/resolve/main"),
-    "modelscope": ("huanlinoto/Pymss-Studio-Dist", "master", "MODELSCOPE_API_TOKEN",
-                   "https://www.modelscope.cn/datasets/huanlinoto/Pymss-Studio-Dist/resolve/master"),
+    "huggingface": ("fengjay01/SoundFlow-Dist", "main", "HF_TOKEN",
+                    "https://huggingface.co/datasets/fengjay01/SoundFlow-Dist/resolve/main"),
+    "modelscope": ("fengjay01/SoundFlow-Dist", "master", "MODELSCOPE_API_TOKEN",
+                   "https://www.modelscope.cn/datasets/fengjay01/SoundFlow-Dist/resolve/master"),
 }
 
 

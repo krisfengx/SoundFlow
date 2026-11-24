@@ -110,7 +110,7 @@ def _prepare_legacy_global_input(
                 # Give them a transient slot so the shared picker remains the
                 # authoritative source instead of silently scanning a stale
                 # folder (or an empty folder) from the saved graph.
-                input_name = "__pymss_studio_global_input__"
+                input_name = "__soundflow_global_input__"
                 while len(widgets) <= 3:
                     widgets.append("")
                 widgets[3] = input_name
@@ -132,7 +132,7 @@ def _write_workflow_file(payload: dict[str, Any], task_id: str) -> tuple[Path, s
 
     fmt = "yaml" if "steps" in definition and "nodes" not in definition else "comfy"
     ext = "yaml" if fmt == "yaml" else "json"
-    temp_dir = Path(tempfile.gettempdir()) / "pymss-studio-workflows"
+    temp_dir = Path(tempfile.gettempdir()) / "soundflow-workflows"
     temp_dir.mkdir(parents=True, exist_ok=True)
     path = temp_dir / f"{task_id}.{ext}"
     if fmt == "yaml":
@@ -146,7 +146,7 @@ def _write_workflow_file(payload: dict[str, Any], task_id: str) -> tuple[Path, s
 
 def _cleanup_workflow_file(task_id: str) -> None:
     """Remove the transient graph definition created for one workflow task."""
-    temp_dir = Path(tempfile.gettempdir()) / "pymss-studio-workflows"
+    temp_dir = Path(tempfile.gettempdir()) / "soundflow-workflows"
     for extension in ("json", "yaml"):
         try:
             (temp_dir / f"{task_id}.{extension}").unlink(missing_ok=True)

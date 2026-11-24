@@ -56,13 +56,13 @@ function record(id, changes = {}) {
 }
 
 function storage(records) {
-  const values = new Map([['pymss-studio:task-history', JSON.stringify({ tasks: records })]])
+  const values = new Map([['soundflow:task-history', JSON.stringify({ tasks: records })]])
   globalThis.window = {}
   globalThis.localStorage = {
     getItem: key => values.get(key) ?? null,
     setItem: (key, value) => values.set(key, value),
   }
-  return () => JSON.parse(values.get('pymss-studio:task-history')).tasks
+  return () => JSON.parse(values.get('soundflow:task-history')).tasks
 }
 
 async function newStore() {

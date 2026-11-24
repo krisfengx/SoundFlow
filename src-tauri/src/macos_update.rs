@@ -10,7 +10,7 @@ use std::path::{Component, Path, PathBuf};
 
 const BUNDLE_NAME: &str = "SoundFlow.app";
 #[cfg(target_os = "macos")]
-const BUNDLE_ID: &str = "studio.pymss.desktop";
+const BUNDLE_ID: &str = "studio.soundflow.desktop";
 #[cfg(target_os = "macos")]
 const MAX_ARCHIVE_BYTES: u64 = 2 * 1024 * 1024 * 1024 - 1;
 const MAX_EXTRACTED_BYTES: u64 = 16 * 1024 * 1024 * 1024;
@@ -29,7 +29,7 @@ fn legacy_previous_bundle(target: &Path) -> PathBuf {
     target
         .parent()
         .unwrap()
-        .join(format!(".pymss-studio-previous-{identity}.app"))
+        .join(format!(".soundflow-previous-{identity}.app"))
 }
 
 fn bundle_from_executable(executable: &Path) -> Option<PathBuf> {
@@ -182,7 +182,7 @@ fn cleanup_legacy_stages_with(
     let mut removed = 0;
     for entry in entries.flatten() {
         let name = entry.file_name();
-        let Some(suffix) = name.to_str().and_then(|name| name.strip_prefix(".pymss-studio-update-")) else { continue };
+        let Some(suffix) = name.to_str().and_then(|name| name.strip_prefix(".soundflow-update-")) else { continue };
         if suffix.is_empty() || !suffix.bytes().all(|byte| byte.is_ascii_alphanumeric()) { continue; }
         let directory = entry.path();
         if current == Some(directory.as_path())
@@ -430,7 +430,7 @@ mod platform {
             direct,
             proxy,
         )
-        .user_agent("Pymss-Studio-Updater")
+        .user_agent("SoundFlow-Updater")
         .build()
         .map_err(|e| failure(e.without_url().to_string()))?;
         let mut response = client
@@ -564,7 +564,7 @@ mod platform {
             fs::remove_dir_all(&legacy)?;
         }
         let stage = tempfile::Builder::new()
-            .prefix(".pymss-studio-update-")
+            .prefix(".soundflow-update-")
             .tempdir_in(parent)?;
         fs::write(stage.path().join(".pymss-update-active"), std::process::id().to_string())?;
         let staged = stage.path().join(BUNDLE_NAME);
@@ -814,7 +814,7 @@ mod platform {
             fs::create_dir_all(bundle.join("Contents/MacOS")).unwrap();
             let mut compiler = Command::new("/usr/bin/clang")
                 .args(["-arch", architecture, "-x", "c", "-", "-o"])
-                .arg(bundle.join("Contents/MacOS/pymss-studio"))
+                .arg(bundle.join("Contents/MacOS/soundflow"))
                 .stdin(Stdio::piped())
                 .spawn()
                 .unwrap();
@@ -831,7 +831,7 @@ mod platform {
                     r#"<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0"><dict>
 <key>CFBundleIdentifier</key><string>{BUNDLE_ID}</string>
-<key>CFBundleExecutable</key><string>pymss-studio</string>
+<key>CFBundleExecutable</key><string>soundflow</string>
 <key>CFBundleShortVersionString</key><string>{version}</string>
 <key>CFBundleVersion</key><string>{version}</string>
 <key>CFBundlePackageType</key><string>APPL</string>
@@ -897,7 +897,7 @@ mod platform {
             installed.commit().unwrap();
             validate_bundle(&target, Some("1.1.0")).unwrap();
             assert!(!legacy_previous_bundle(&target).exists());
-            assert!(!fs::read_dir(root.path()).unwrap().any(|entry| entry.unwrap().file_name().to_string_lossy().starts_with(".pymss-studio-update-")));
+            assert!(!fs::read_dir(root.path()).unwrap().any(|entry| entry.unwrap().file_name().to_string_lossy().starts_with(".soundflow-update-")));
             let next = signed_bundle(root.path(), "Next.app", "1.2.0");
             install_writable(&target, &next, "1.2.0", 1024).unwrap().commit().unwrap();
             validate_bundle(&target, Some("1.2.0")).unwrap();
@@ -955,7 +955,7 @@ mod platform {
                 .unwrap();
             let token = transaction.path().file_name().unwrap().to_str().unwrap();
             let control =
-                Path::new("/private/tmp").join(format!("pymss-studio-authorized-{token}"));
+                Path::new("/private/tmp").join(format!("soundflow-authorized-{token}"));
             let command = authorized::command(target, archive, digest, "1.1.0", token);
             let script = format!("do shell script {}", applescript_quote(&command));
             // Exercise the same script and shell quoting as production, as the CI user.
@@ -1076,7 +1076,7 @@ mod tests {
     #[test]
     fn legacy_backup_cleanup_is_scoped_to_the_full_installation_path() {
         let first = Path::new("/Applications/SoundFlow.app");
-        let beta = Path::new("/Applications/Pymss Studio Beta.app");
+        let beta = Path::new("/Applications/SoundFlow Beta.app");
         let user = Path::new("/Users/me/Applications/SoundFlow.app");
         assert_eq!(legacy_previous_bundle(first), legacy_previous_bundle(first));
         assert_ne!(legacy_previous_bundle(first), legacy_previous_bundle(beta));
@@ -1109,15 +1109,15 @@ mod tests {
     fn recognizes_only_real_bundle_executable_layouts() {
         assert_eq!(
             bundle_from_executable(Path::new(
-                "/Applications/Renamed.app/Contents/MacOS/pymss-studio"
+                "/Applications/Renamed.app/Contents/MacOS/soundflow"
             )),
             Some(PathBuf::from("/Applications/Renamed.app"))
         );
-        assert!(bundle_from_executable(Path::new("/tmp/pymss-studio")).is_none());
-        assert!(bundle_from_executable(Path::new("/tmp/Fake.app/bin/pymss-studio")).is_none());
+        assert!(bundle_from_executable(Path::new("/tmp/soundflow")).is_none());
+        assert!(bundle_from_executable(Path::new("/tmp/Fake.app/bin/soundflow")).is_none());
         assert!(location_problem(Path::new("/Applications/SoundFlow.app"), false).is_none());
         assert!(
-            location_problem(Path::new("/Volumes/Pymss Studio/SoundFlow.app"), true).is_some()
+            location_problem(Path::new("/Volumes/SoundFlow/SoundFlow.app"), true).is_some()
         );
         assert!(location_problem(
             Path::new("/private/var/AppTranslocation/id/d/SoundFlow.app"),
@@ -1202,10 +1202,10 @@ mod tests {
     #[test]
     fn legacy_stage_cleanup_rejects_unknown_contents_and_active_transactions() {
         let root = tempfile::tempdir().unwrap();
-        let legacy = root.path().join(".pymss-studio-update-old123");
-        let active = root.path().join(".pymss-studio-update-new123");
-        let other = root.path().join(".pymss-studio-update-other123");
-        let invalid = root.path().join(".pymss-studio-update-bad123");
+        let legacy = root.path().join(".soundflow-update-old123");
+        let active = root.path().join(".soundflow-update-new123");
+        let other = root.path().join(".soundflow-update-other123");
+        let invalid = root.path().join(".soundflow-update-bad123");
         for directory in [&legacy, &active, &other, &invalid] {
             fs::create_dir_all(directory.join(BUNDLE_NAME)).unwrap();
         }
@@ -1225,7 +1225,7 @@ mod tests {
             if bundle.starts_with(&active) { Ok(()) } else { Err(failure("invalid signature")) }
         }), 1);
         assert!(!active.exists());
-        let expired = root.path().join(".pymss-studio-update-expired123");
+        let expired = root.path().join(".soundflow-update-expired123");
         fs::create_dir_all(expired.join(BUNDLE_NAME)).unwrap();
         let marker = expired.join(".pymss-update-active");
         fs::write(&marker, "42").unwrap();
@@ -1282,7 +1282,7 @@ mod tests {
         let entries: &[(&str, &[u8])] = &[
             ("SoundFlow.app/Contents/Info.plist", b"plist"),
             (
-                "SoundFlow.app/Contents/MacOS/pymss-studio",
+                "SoundFlow.app/Contents/MacOS/soundflow",
                 b"executable",
             ),
         ];
@@ -1291,7 +1291,7 @@ mod tests {
         fs::create_dir(&destination).unwrap();
         let bundle = extract_bundle(&archive, &destination).unwrap();
         assert_eq!(
-            fs::read(bundle.join("Contents/MacOS/pymss-studio")).unwrap(),
+            fs::read(bundle.join("Contents/MacOS/soundflow")).unwrap(),
             b"executable"
         );
 

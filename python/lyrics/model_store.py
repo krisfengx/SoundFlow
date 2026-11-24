@@ -80,7 +80,7 @@ def _download_url(url: str, dest: Path, expected_size: int,
     if expected_size and done > expected_size:
         part.unlink(missing_ok=True)
         done = 0
-    headers = {"User-Agent": "pymss-studio-model-store"}
+    headers = {"User-Agent": "soundflow-model-store"}
     if done:
         headers["Range"] = f"bytes={done}-"
     req = urllib.request.Request(url, headers=headers)

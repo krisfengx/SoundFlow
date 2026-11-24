@@ -56,6 +56,14 @@ export function createDemoRuntime(config: DemoConfig) {
   const envInfo = { platform: config.platform, pythonVersion: '3.12', pymssAvailable: true, pymssVersion: '2.1.8',
     torchAvailable: !isMac, torchVersion: '2.5', torchBackend: backend, mlxAvailable: isMac, cudaAvailable: false,
     cudaDeviceCount: 0, cudaDevices: [], mpsAvailable: false, ffmpegAvailable: true }
+  const demoLyricsModels = [
+    { id: 'whisper-large-v3', name: 'Whisper large-v3', category: 'asr', license: 'MIT', note: '语音识别与行定位',
+      approxSize: 1_550_000_000, complete: true, problems: [], cacheDir: prefix + '/Models/lyrics',
+      licenseShort: 'MIT', source: 'huggingface', target: 'asr' },
+    { id: 'qwen3-fa', name: 'Qwen3-ForcedAligner', category: 'alignment', license: 'Apache-2.0', note: '逐字时间轴对齐',
+      approxSize: 600_000_000, complete: true, problems: [], cacheDir: prefix + '/Models/lyrics',
+      licenseShort: 'Apache', source: 'modelscope', target: 'alignment' },
+  ]
   function callback(handler?: (value: any) => void, once = false) {
     const id = sequence++
     callbacks.set(id, { handler, once })
@@ -123,6 +131,19 @@ export function createDemoRuntime(config: DemoConfig) {
     if (command === 'start_env_check') { later(() => emit('pymss://worker-event', { type: 'env_info', requestId: args.requestId, payload: envInfo }), 30); return }
     if (command === 'get_build_info') return { version: '0.0.12', variant: 'tutorial', official: false, updateSupported: false }
     if (command === 'get_managed_update_state') return { restartRequired: false }
+    if (command === 'lyrics_model_status') return { modelDir: prefix + '/Models', models: [] }
+    if (command === 'start_lyrics') {
+      const action = payload.action
+      if (action === 'l2t_status') {
+        later(() => worker('task_done', payload.taskId, { models: copy(demoLyricsModels), root: prefix + '/Models/lyrics' }), 30)
+      } else if (action) {
+        later(() => worker('task_done', payload.taskId, { available: true }), 30)
+      }
+      return { taskId: payload.taskId, started: true }
+    }
+    if (command === 'pick_lyrics_text_file') return input
+    if (command === 'pick_lyrics_files') return [input]
+    if (command === 'scan_lyrics_dir') return { files: [], warnings: [] }
     if (['pick_media_files', 'pick_audio_files'].includes(command)) return [input]
     if (['pick_single_audio_file'].includes(command)) return input
     if (command === 'scan_media_paths') return { files: [input], warnings: [] }

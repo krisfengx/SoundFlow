@@ -43,7 +43,7 @@ with sync_playwright() as playwright:
     page = browser.new_page(viewport={'width': 1440, 'height': 1000})
     errors = []
     page.on('pageerror', lambda error: errors.append(error.stack))
-    page.add_init_script('localStorage.setItem("pymss-studio:app-settings", JSON.stringify(' + json.dumps({'startupOnboardingSeen': True, 'locale': 'zh-CN', 'themeMode': 'light', 'outputDir': str(artifacts / 'output')}, ensure_ascii=False) + ')); localStorage.setItem("pymss-studio:workflow-state", JSON.stringify(' + json.dumps(state, ensure_ascii=False) + '));')
+    page.add_init_script('localStorage.setItem("soundflow:app-settings", JSON.stringify(' + json.dumps({'startupOnboardingSeen': True, 'locale': 'zh-CN', 'themeMode': 'light', 'outputDir': str(artifacts / 'output')}, ensure_ascii=False) + ')); localStorage.setItem("soundflow:workflow-state", JSON.stringify(' + json.dumps(state, ensure_ascii=False) + '));')
     page.goto(args.url.rstrip('/') + '/#/workflow-simple-editor?workflowId=phase')
     page.wait_for_load_state('networkidle')
     # The browser fixture owns tasks like the main window; hide its chrome
@@ -76,9 +76,9 @@ with sync_playwright() as playwright:
           if(cmd==='pick_input_folder') return window.__inputFolder;
           if(cmd==='scan_media_paths') return {files:window.__inputFiles,warnings:[]};
           if(cmd==='pick_output_folder') return window.__outputFolder;
-          if(cmd==='save_app_store') {localStorage.setItem('pymss-studio:'+args.name,JSON.stringify(args.data));return null;}
-          if(cmd==='load_app_store') return JSON.parse(localStorage.getItem('pymss-studio:'+args.name)||'null');
-          if(cmd==='mutate_workflow_store') {const state=JSON.parse(localStorage.getItem('pymss-studio:workflow-state'));const v=args.payload.entry;const index=state.workflows.findIndex(w=>w.id===v.id);if(index<0)state.workflows.push(v);else state.workflows[index]=v;state.selectedWorkflowId=v.id;localStorage.setItem('pymss-studio:workflow-state',JSON.stringify(state));return {state};}
+          if(cmd==='save_app_store') {localStorage.setItem('soundflow:'+args.name,JSON.stringify(args.data));return null;}
+          if(cmd==='load_app_store') return JSON.parse(localStorage.getItem('soundflow:'+args.name)||'null');
+          if(cmd==='mutate_workflow_store') {const state=JSON.parse(localStorage.getItem('soundflow:workflow-state'));const v=args.payload.entry;const index=state.workflows.findIndex(w=>w.id===v.id);if(index<0)state.workflows.push(v);else state.workflows[index]=v;state.selectedWorkflowId=v.id;localStorage.setItem('soundflow:workflow-state',JSON.stringify(state));return {state};}
           if(cmd==='start_workflow_inference') {window.__workerPayloads.push(args.payload);return {taskId:args.payload.taskId,started:true};}
           if(cmd==='plugin:event|listen') return 1;
           if(cmd==='cancel_task') return true;
@@ -206,9 +206,9 @@ with sync_playwright() as playwright:
           if(cmd==='pick_input_folder') {window.__nativePickerCalls.push(cmd);return window.__inputFolder;}
           if(cmd==='scan_media_paths') throw Error('Native graph folders must be scanned by pymss');
           if(cmd==='pick_output_folder') return window.__outputFolder;
-          if(cmd==='save_app_store') {localStorage.setItem('pymss-studio:'+args.name,JSON.stringify(args.data));return null;}
-          if(cmd==='load_app_store') return JSON.parse(localStorage.getItem('pymss-studio:'+args.name)||'null');
-          if(cmd==='mutate_workflow_store') {const state=JSON.parse(localStorage.getItem('pymss-studio:workflow-state'));const v=args.payload.entry;const index=state.workflows.findIndex(w=>w.id===v.id);if(index<0)state.workflows.push(v);else state.workflows[index]=v;state.selectedWorkflowId=v.id;localStorage.setItem('pymss-studio:workflow-state',JSON.stringify(state));return {state};}
+          if(cmd==='save_app_store') {localStorage.setItem('soundflow:'+args.name,JSON.stringify(args.data));return null;}
+          if(cmd==='load_app_store') return JSON.parse(localStorage.getItem('soundflow:'+args.name)||'null');
+          if(cmd==='mutate_workflow_store') {const state=JSON.parse(localStorage.getItem('soundflow:workflow-state'));const v=args.payload.entry;const index=state.workflows.findIndex(w=>w.id===v.id);if(index<0)state.workflows.push(v);else state.workflows[index]=v;state.selectedWorkflowId=v.id;localStorage.setItem('soundflow:workflow-state',JSON.stringify(state));return {state};}
           if(cmd==='start_workflow_inference') {window.__workerPayloads.push(args.payload);return {taskId:args.payload.taskId,started:true};}
           if(cmd==='plugin:event|listen') return 1;
           if(cmd==='cancel_task') return true;

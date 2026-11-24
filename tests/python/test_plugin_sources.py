@@ -129,7 +129,7 @@ class PluginSourceTests(unittest.TestCase):
 
     def test_same_version_source_edits_are_detected_and_dependency_sidecars_are_ignored(self):
         root = self.local_source()
-        with mock.patch.dict(os.environ, {'PYMSS_STUDIO_PLUGINS_SOURCE': str(root)}):
+        with mock.patch.dict(os.environ, {'SOUNDFLOW_PLUGINS_SOURCE': str(root)}):
             code, events = self.manage('install', name='hello')
             self.assertEqual(code, 0, events)
             target = self.root / 'installed/hello'
@@ -152,7 +152,7 @@ class PluginSourceTests(unittest.TestCase):
 
     def setUp(self):
         marketplace.PluginMarketplaceTests.setUp(self)
-        patch = mock.patch.dict(os.environ, {key: '' for key in ('PYMSS_STUDIO_PLUGINS_SOURCE', 'PYMSS_STUDIO_PLUGIN_SOURCE_OVERRIDE', 'PYMSS_PLUGINS_REGISTRY')})
+        patch = mock.patch.dict(os.environ, {key: '' for key in ('SOUNDFLOW_PLUGINS_SOURCE', 'SOUNDFLOW_PLUGIN_SOURCE_OVERRIDE', 'PYMSS_PLUGINS_REGISTRY')})
         patch.start()
         self.addCleanup(patch.stop)
 
@@ -172,7 +172,7 @@ class PluginSourceTests(unittest.TestCase):
 
     def test_source_info_defaults_and_saved_overrides(self):
         root = self.local_source()
-        with mock.patch.dict(os.environ, {'PYMSS_STUDIO_PLUGINS_SOURCE': str(root)}):
+        with mock.patch.dict(os.environ, {'SOUNDFLOW_PLUGINS_SOURCE': str(root)}):
             value = self.source_info()
             self.assertEqual(value['defaults']['mode'], 'local')
             self.assertEqual(value['defaults']['repositoryUrl'], 'https://github.com/example/plugins')
@@ -180,7 +180,7 @@ class PluginSourceTests(unittest.TestCase):
             self.assertEqual(value['registryPath'], str(root / 'registry.json'))
             self.assertTrue(value['available'])
             self.assertEqual(value['catalogCount'], 1)
-            with mock.patch.dict(os.environ, {'PYMSS_STUDIO_PLUGIN_SOURCE_OVERRIDE': json.dumps({'mode': 'repository', 'repositoryUrl': 'https://github.com/other/plugins', 'ref': 'v1', 'registryRef': 'main'})}):
+            with mock.patch.dict(os.environ, {'SOUNDFLOW_PLUGIN_SOURCE_OVERRIDE': json.dumps({'mode': 'repository', 'repositoryUrl': 'https://github.com/other/plugins', 'ref': 'v1', 'registryRef': 'main'})}):
                 value = self.source_info()
                 self.assertEqual(value['effective']['origin'], 'debug')
                 self.assertEqual(value['registryUrl'], 'https://raw.githubusercontent.com/other/plugins/main/registry.json')
@@ -191,7 +191,7 @@ class PluginSourceTests(unittest.TestCase):
         self.assertEqual(default['defaults']['mode'], 'repository')
         self.assertEqual(default['effective']['mode'], 'repository')
         saved = json.dumps({'mode': 'local', 'localPath': str(root)})
-        with mock.patch.dict(os.environ, {'PYMSS_STUDIO_PLUGIN_SOURCE_OVERRIDE': saved}):
+        with mock.patch.dict(os.environ, {'SOUNDFLOW_PLUGIN_SOURCE_OVERRIDE': saved}):
             selected = self.source_info()
             self.assertEqual(selected['defaults']['mode'], 'repository')
             self.assertEqual(selected['effective']['mode'], 'local')
@@ -213,7 +213,7 @@ class PluginSourceTests(unittest.TestCase):
 
     def test_local_catalog_and_short_name_copy_never_use_the_network(self):
         root = self.local_source()
-        with mock.patch.dict(os.environ, {'PYMSS_STUDIO_PLUGINS_SOURCE': str(root)}), \
+        with mock.patch.dict(os.environ, {'SOUNDFLOW_PLUGINS_SOURCE': str(root)}), \
              mock.patch('pymss.plugins.install.install', side_effect=AssertionError('remote install')), \
              mock.patch('pymss.plugins.install.list_available', side_effect=AssertionError('remote catalog')), \
              mock.patch.object(plugins, '_inventory', return_value={}):
@@ -231,7 +231,7 @@ class PluginSourceTests(unittest.TestCase):
 
     def test_explicit_registry_environment_has_highest_priority(self):
         root = self.local_source()
-        with mock.patch.dict(os.environ, {'PYMSS_STUDIO_PLUGINS_SOURCE': str(root), 'PYMSS_PLUGINS_REGISTRY': 'https://custom.example/registry.json'}):
+        with mock.patch.dict(os.environ, {'SOUNDFLOW_PLUGINS_SOURCE': str(root), 'PYMSS_PLUGINS_REGISTRY': 'https://custom.example/registry.json'}):
             info = self.source_info()
             self.assertEqual(info['effective']['origin'], 'registry-environment')
             self.assertEqual(info['registryUrl'], 'https://custom.example/registry.json')
@@ -248,7 +248,7 @@ class PluginSourceTests(unittest.TestCase):
         metadata.update(preinstalled=True, source='registry', url='https://github.com/example/plugins', subpath='hello')
         (current / '.pymss-install.json').write_text(json.dumps(metadata), encoding='utf-8')
         self.assertEqual(self.manage('disable', name='hello')[0], 0)
-        with mock.patch.dict(os.environ, {'PYMSS_STUDIO_PLUGINS_SOURCE': str(root)}), mock.patch('pymss.plugins.install.install', side_effect=AssertionError('remote install')):
+        with mock.patch.dict(os.environ, {'SOUNDFLOW_PLUGINS_SOURCE': str(root)}), mock.patch('pymss.plugins.install.install', side_effect=AssertionError('remote install')):
             for index in range(2):
                 entry = root / 'hello/__init__.py'
                 entry.write_text(entry.read_text(encoding='utf-8') + f'\nLOCAL_UPDATE_{index} = True\n', encoding='utf-8')
@@ -269,20 +269,20 @@ class PluginSourceTests(unittest.TestCase):
         metadata_path.write_text(json.dumps(metadata), encoding='utf-8')
         project = root / 'hello/pyproject.toml'
         project.write_text(project.read_text(encoding='utf-8').replace('1.0.0', '2.0.0'), encoding='utf-8')
-        with mock.patch.dict(os.environ, {'PYMSS_STUDIO_PLUGINS_SOURCE': str(root)}), mock.patch('pymss.plugins.install.check_update', side_effect=AssertionError('remote check')):
+        with mock.patch.dict(os.environ, {'SOUNDFLOW_PLUGINS_SOURCE': str(root)}), mock.patch('pymss.plugins.install.check_update', side_effect=AssertionError('remote check')):
             code, events = self.manage('check_updates')
             self.assertEqual(code, 0, events)
             self.assertEqual(events[-1]['payload']['updates']['hello']['remote_version'], '2.0.0')
         metadata.update(preinstalled=False, source='path', defaultRepository=False, url=str(self.work / 'sources/hello'), subpath=None)
         metadata_path.write_text(json.dumps(metadata), encoding='utf-8')
-        with mock.patch.dict(os.environ, {'PYMSS_STUDIO_PLUGINS_SOURCE': str(root / 'missing')}):
+        with mock.patch.dict(os.environ, {'SOUNDFLOW_PLUGINS_SOURCE': str(root / 'missing')}):
             code, events = self.manage('update', name='hello')
         self.assertEqual(code, 0, events)
         self.assertEqual(plugins._manifest(metadata_path.parent)['version'], '1.0.0')
 
     def test_stale_source_fence_rejects_acquisition_before_installation(self):
         root = self.local_source()
-        with mock.patch.dict(os.environ, {'PYMSS_STUDIO_PLUGINS_SOURCE': str(root)}):
+        with mock.patch.dict(os.environ, {'SOUNDFLOW_PLUGINS_SOURCE': str(root)}):
             info = self.source_info()
             expected = {key: value for key, value in info['effective'].items() if key != 'origin'}
             expected['registryUrl'] = info['registryUrl']
@@ -295,7 +295,7 @@ class PluginSourceTests(unittest.TestCase):
         from pymss.plugins.install import InstallResult
 
         root = self.local_source()
-        with mock.patch.dict(os.environ, {'PYMSS_STUDIO_PLUGINS_SOURCE': str(root)}):
+        with mock.patch.dict(os.environ, {'SOUNDFLOW_PLUGINS_SOURCE': str(root)}):
             self.assertEqual(self.manage('install', name='hello')[0], 0)
         remote = self.source(version='3.0.0')
         selected = {'mode': 'repository', 'repositoryUrl': 'https://github.com/other/plugins', 'ref': 'main', 'registryRef': 'main'}
@@ -312,7 +312,7 @@ class PluginSourceTests(unittest.TestCase):
             (destination / '.pymss-install.json').write_text(json.dumps({'name': 'hello', 'version': '3.0.0', 'source': 'registry', 'url': selected['repositoryUrl'], 'subpath': 'plugins/hello'}), encoding='utf-8')
             return InstallResult(name='hello', path=destination, source='registry', version='3.0.0')
 
-        with mock.patch.dict(os.environ, {'PYMSS_STUDIO_PLUGINS_SOURCE': str(root), 'PYMSS_STUDIO_PLUGIN_SOURCE_OVERRIDE': json.dumps(selected)}), mock.patch('pymss.plugins.install.install', side_effect=install), mock.patch('pymss.plugins.install.list_available', return_value=[{
+        with mock.patch.dict(os.environ, {'SOUNDFLOW_PLUGINS_SOURCE': str(root), 'SOUNDFLOW_PLUGIN_SOURCE_OVERRIDE': json.dumps(selected)}), mock.patch('pymss.plugins.install.install', side_effect=install), mock.patch('pymss.plugins.install.list_available', return_value=[{
             'name': 'hello', 'url': selected['repositoryUrl'], 'subpath': 'plugins/hello', 'version': '3.0.0', 'ref': 'v3.0.0',
         }]):
             code, events = self.manage('update', name='hello')

@@ -114,7 +114,7 @@ def configure_rocm_runtime(
     import torch
     if not getattr(torch.version, "hip", None) or not torch.cuda.is_available():
         return False
-    mode = os.environ.get("PYMSS_STUDIO_ROCM_COMPAT", "auto").strip().lower()
+    mode = os.environ.get("SOUNDFLOW_ROCM_COMPAT", "auto").strip().lower()
     if mode == "off":
         if logger:
             logger.info("ROCm compatibility handling is disabled for this worker")

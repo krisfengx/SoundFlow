@@ -78,7 +78,7 @@ jobs:
           PYMSS_BUILD_UPDATE_SUPPORTED: 'true'
           PYMSS_BUILD_TARGET: linux-x64
           PYMSS_BUILD_VARIANT: linux-x64-appimage
-          PYMSS_BUILD_OFFICIAL: ${{ github.repository == 'fengjay01/SoundFlow' && github.repository_owner == 'fengjay01' && 'true' || 'false' }}
+          PYMSS_BUILD_OFFICIAL: ${{ github.repository == 'krisfengx/SoundFlow' && github.repository_owner == 'krisfengx' && 'true' || 'false' }}
         run: |
           set -o pipefail
           python3 - <<'PY'

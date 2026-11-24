@@ -101,7 +101,7 @@ test('file, application, and fixed-namespace settings SDK calls use validated ho
   assert.equal(JSON.stringify(await controller.handleCall(3, 'files.scanAudio', { paths: ['/a.wav'], recursive: false })), JSON.stringify({ files: ['/a.wav'] }))
   await controller.handleCall(4, 'files.reveal', { path: '/a.wav' })
   assert.equal(JSON.stringify(await controller.handleCall(5, 'app.info', {})), JSON.stringify({
-    studio: 'pymss-studio', version: '1.2.3', locale: 'zh-CN',
+    studio: 'soundflow', version: '1.2.3', locale: 'zh-CN',
     sdkVersion: sdkContract.version, capabilities: sdkContract.capabilities, defaultOutputDir: '/exports',
     runtimeInfo: { platform: 'win32', packages: { pymss: '2.1.12' } },
   }))

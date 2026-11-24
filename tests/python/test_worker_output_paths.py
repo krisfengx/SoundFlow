@@ -26,7 +26,7 @@ class WorkerOutputPathTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         self.default = self.root / "data" / "outputs"
-        env = mock.patch.dict(os.environ, {"PYMSS_STUDIO_DEFAULT_OUTPUT_DIR": str(self.default)})
+        env = mock.patch.dict(os.environ, {"SOUNDFLOW_DEFAULT_OUTPUT_DIR": str(self.default)})
         env.start()
         self.addCleanup(env.stop)
 
@@ -49,7 +49,7 @@ class WorkerOutputPathTests(unittest.TestCase):
                     self.assertEqual(Path(module._normalize_output_dir(value)), self.default.resolve())
 
     def test_standalone_workers_resolve_relative_paths_from_the_working_directory(self) -> None:
-        with mock.patch.dict(os.environ, {"PYMSS_STUDIO_DEFAULT_OUTPUT_DIR": ""}):
+        with mock.patch.dict(os.environ, {"SOUNDFLOW_DEFAULT_OUTPUT_DIR": ""}):
             for module in (worker_infer, worker_workflows):
                 self.assertEqual(Path(module._normalize_output_dir(None)), Path("results").resolve())
                 self.assertEqual(Path(module._normalize_output_dir("delivery")), Path("delivery").resolve())

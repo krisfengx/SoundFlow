@@ -361,7 +361,7 @@ fn hanging_process() -> HostProcess {
         command.args(["-c", "exec sleep 30"]);
         command
     };
-    command.env("PYMSS_STUDIO_DATA_ROOT", "unused-scan-fixture");
+    command.env("SOUNDFLOW_DATA_ROOT", "unused-scan-fixture");
     HostProcess::spawn_command(command).unwrap()
 }
 

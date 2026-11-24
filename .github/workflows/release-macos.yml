@@ -133,7 +133,7 @@ jobs:
           PYMSS_BUILD_UPDATE_SUPPORTED: 'true'
           PYMSS_BUILD_TARGET: macos-arm64
           PYMSS_BUILD_VARIANT: macos-arm64-mlx
-          PYMSS_BUILD_OFFICIAL: ${{ github.repository == 'fengjay01/SoundFlow' && github.repository_owner == 'fengjay01' && 'true' || 'false' }}
+          PYMSS_BUILD_OFFICIAL: ${{ github.repository == 'krisfengx/SoundFlow' && github.repository_owner == 'krisfengx' && 'true' || 'false' }}
         run: |
           python3 - <<'PY' > src-tauri/tauri.bundle.resources.json
           import json

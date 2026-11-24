@@ -22,10 +22,10 @@ impl RecoveryFixture {
         ));
         fs::create_dir(&sandbox).unwrap();
         let root = sandbox.join("app");
-        let backup = root.join(".pymss-studio-update-backup-contract");
+        let backup = root.join(".soundflow-update-backup-contract");
         let mut fixture = Self { sandbox, root, backup, protected: BTreeMap::new() };
         for (relative, bytes) in [
-            ("pymss-studio.portable", "portable"),
+            ("soundflow.portable", "portable"),
             ("data/settings/app.json", "{\"locale\":\"zh-CN\",\"customField\":7}"),
             ("data/settings/tasks.json", "[{\"id\":\"saved-task\"}]"),
             ("data/settings/workflows.json", "{\"workflows\":[{\"id\":\"saved-workflow\"}]}"),
@@ -34,7 +34,7 @@ impl RecoveryFixture {
             ("data/outputs/audio.wav", "saved-audio"),
             ("python-runtime/runtime-envs/active-runtime.json", "{\"backend\":\"cpu\",\"pythonPath\":\"cpu/Scripts/python.exe\"}"),
             ("python-runtime/runtime-envs/cpu/Lib/site-packages/package.py", "saved-runtime"),
-            ("Pymss Studio.exe", "new-executable"),
+            ("SoundFlow.exe", "new-executable"),
             ("python/worker.py", "new-worker"),
             ("bin/ffmpeg.exe", "original-tool"),
         ] {
@@ -60,7 +60,7 @@ impl RecoveryFixture {
         for (path, value) in [
             ("python/worker.py", "old-worker"),
             ("bin/ffmpeg.exe", "old-tool"),
-            ("Pymss Studio.exe", "old-executable"),
+            ("SoundFlow.exe", "old-executable"),
         ] {
             self.write(&self.backup.join(path), value.as_bytes());
         }
@@ -86,7 +86,7 @@ impl RecoveryFixture {
     fn protected_snapshot(&self) -> BTreeMap<PathBuf, Vec<u8>> {
         self.snapshot().into_iter().filter(|(path, _)| {
             path.starts_with("app/data") || path.starts_with("app/python-runtime")
-                || path == Path::new("app/pymss-studio.portable")
+                || path == Path::new("app/soundflow.portable")
         }).collect()
     }
 
@@ -104,7 +104,7 @@ impl RecoveryFixture {
         for (name, content) in [
             ("python/worker.py", "old-worker"),
             ("bin/ffmpeg.exe", "old-tool"),
-            ("Pymss Studio.exe", "old-executable"),
+            ("SoundFlow.exe", "old-executable"),
         ] {
             assert_eq!(fs::read_to_string(self.root.join(name)).unwrap(), content);
         }
@@ -113,7 +113,7 @@ impl RecoveryFixture {
     fn quarantined_markers(&self) -> Vec<PathBuf> {
         fs::read_dir(&self.root).unwrap().map(|entry| entry.unwrap().path())
             .filter(|path| path.file_name().unwrap().to_string_lossy()
-                .starts_with(".pymss-studio-update-transaction.invalid-")).collect()
+                .starts_with(".soundflow-update-transaction.invalid-")).collect()
     }
 }
 
@@ -163,7 +163,7 @@ fn restart_failure_without_a_marker_preserves_the_current_installation() {
 fn unmarked_targets_are_rejected_before_recovery_or_restart() {
     let fixture = RecoveryFixture::new();
     fixture.populate_backup(UpdatePhase::Replacing);
-    fs::remove_file(fixture.root.join("pymss-studio.portable")).unwrap();
+    fs::remove_file(fixture.root.join("soundflow.portable")).unwrap();
     let before = fixture.snapshot();
     for interrupted in [true, false] {
         let result = if interrupted {
@@ -171,7 +171,7 @@ fn unmarked_targets_are_rejected_before_recovery_or_restart() {
         } else {
             recover_or_relaunch_with(&fixture.root, || panic!("unexpected restart"))
         };
-        assert!(result.unwrap_err().to_string().contains("not a managed Pymss Studio installation"));
+        assert!(result.unwrap_err().to_string().contains("not a managed SoundFlow installation"));
         assert_eq!(fixture.snapshot(), before);
     }
 }
@@ -191,7 +191,7 @@ fn invalid_marker_json_is_retained_by_both_helper_recovery_entries() {
 fn helper_backup_argument_must_match_the_transaction_before_file_changes() {
     let fixture = RecoveryFixture::new();
     fixture.populate_backup(UpdatePhase::Replacing);
-    let other = fixture.root.join(".pymss-studio-update-backup-other");
+    let other = fixture.root.join(".soundflow-update-backup-other");
     fixture.write(&other.join("python/worker.py"), b"unrelated-backup");
     let before = fixture.snapshot();
     let error = recover_interrupted_update_with(&fixture.root, &other, || panic!("unexpected restart")).unwrap_err();
@@ -203,7 +203,7 @@ fn helper_backup_argument_must_match_the_transaction_before_file_changes() {
 fn invalid_backup_locations_leave_the_transaction_and_files_unchanged() {
     for interrupted in [true, false] {
         let mut fixture = RecoveryFixture::new();
-        for backup in [fixture.sandbox.join("outside/.pymss-studio-update-backup-other"), fixture.root.join("data")] {
+        for backup in [fixture.sandbox.join("outside/.soundflow-update-backup-other"), fixture.root.join("data")] {
             fixture.backup = backup;
             fixture.marker(UpdatePhase::Replacing);
             let before = fixture.snapshot();
@@ -306,7 +306,7 @@ fn partial_recovery_snapshot_preserves_paths_already_restored_or_never_backed_up
         fixture.run(interrupted, || Ok(())).unwrap();
         assert_eq!(fs::read_to_string(fixture.root.join("python/worker.py")).unwrap(), "old-worker");
         assert_eq!(fs::read_to_string(fixture.root.join("bin/ffmpeg.exe")).unwrap(), "original-tool");
-        assert_eq!(fs::read_to_string(fixture.root.join("Pymss Studio.exe")).unwrap(), "old-executable");
+        assert_eq!(fs::read_to_string(fixture.root.join("SoundFlow.exe")).unwrap(), "old-executable");
     }
 }
 
@@ -337,7 +337,7 @@ fn restart_failure_after_prepared_cleanup_keeps_the_quarantined_marker() {
         assert!(fixture.run(interrupted, || Err(restart_error())).is_err());
         assert!(!transaction_path(&fixture.root).exists());
         assert_eq!(fixture.quarantined_markers().len(), 1);
-        assert_eq!(fs::read_to_string(fixture.root.join("Pymss Studio.exe")).unwrap(), "new-executable");
+        assert_eq!(fs::read_to_string(fixture.root.join("SoundFlow.exe")).unwrap(), "new-executable");
     }
 }
 
@@ -366,7 +366,7 @@ fn deny_delete(path: &Path) -> fs::File {
 #[test]
 fn partial_restore_failure_retains_recovery_state_and_can_be_retried() {
     for interrupted in [true, false] {
-        for locked_path in ["bin/ffmpeg.exe", "Pymss Studio.exe"] {
+        for locked_path in ["bin/ffmpeg.exe", "SoundFlow.exe"] {
             let fixture = RecoveryFixture::new();
             fixture.populate_backup(UpdatePhase::Replacing);
             let marker = fs::read(transaction_path(&fixture.root)).unwrap();
@@ -374,7 +374,7 @@ fn partial_restore_failure_retains_recovery_state_and_can_be_retried() {
             assert!(fixture.run(interrupted, || panic!("unexpected restart")).is_err());
             assert_eq!(fs::read(transaction_path(&fixture.root)).unwrap(), marker);
             assert!(fixture.backup.join(locked_path).is_file());
-            assert!(fixture.backup.join("Pymss Studio.exe").is_file());
+            assert!(fixture.backup.join("SoundFlow.exe").is_file());
             assert_eq!(fs::read_to_string(fixture.root.join("python/worker.py")).unwrap(), "old-worker");
             drop(lock);
             fixture.run(interrupted, || Ok(())).unwrap();

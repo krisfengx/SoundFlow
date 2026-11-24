@@ -47,7 +47,7 @@ class BatchLogAttributionTests(unittest.TestCase):
         root = logging.getLogger()
         previous_handlers = root.handlers[:]
         previous_level = root.level
-        with patch.dict(os.environ, {"PYMSS_STUDIO_LOG_TRANSPORT": "protocol"}), \
+        with patch.dict(os.environ, {"SOUNDFLOW_LOG_TRANSPORT": "protocol"}), \
              patch.object(worker, "run_command", side_effect=lambda _command, data: run(data)), \
              redirect_stdout(output), redirect_stderr(io.StringIO()), warnings.catch_warnings():
             warnings.simplefilter("always")

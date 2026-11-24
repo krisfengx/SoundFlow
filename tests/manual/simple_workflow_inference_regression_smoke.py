@@ -46,9 +46,9 @@ def open_editor(browser, *, normalize, model_normalize=False, vr=False):
     models = {"models": [] if vr else [model], "modelInferenceOverrides": {MODEL_NAME: overrides}}
     page = browser.new_page(viewport={"width": 1366, "height": 900})
     page.add_init_script(f"""(() => {{
-      localStorage.setItem('pymss-studio:app-settings', JSON.stringify({{startupOnboardingSeen:true,locale:'en'}}));
-      localStorage.setItem('pymss-studio:workflow-state', JSON.stringify({json.dumps(state)}));
-      localStorage.setItem('pymss-studio:model-state', JSON.stringify({json.dumps(models)}));
+      localStorage.setItem('soundflow:app-settings', JSON.stringify({{startupOnboardingSeen:true,locale:'en'}}));
+      localStorage.setItem('soundflow:workflow-state', JSON.stringify({json.dumps(state)}));
+      localStorage.setItem('soundflow:model-state', JSON.stringify({json.dumps(models)}));
     }})()""")
     base_url = os.environ.get("PYMSS_SMOKE_URL", "http://127.0.0.1:1420")
     page.goto(f"{base_url}/#/workflow-simple-editor?workflowId=inference-regression", wait_until="domcontentloaded")
@@ -65,14 +65,14 @@ def open_editor(browser, *, normalize, model_normalize=False, vr=False):
 def persist(page, modal):
     modal.locator(".simple-inference-modal__footer .n-button--primary-type").click()
     expect(modal).to_be_hidden()
-    previous_update = page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows[0].updatedAt")
+    previous_update = page.evaluate("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows[0].updatedAt")
     page.locator(".simple-node-editor__topbar .n-button--primary-type").click()
     page.wait_for_function(
-        "previous => JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows[0].updatedAt > previous",
+        "previous => JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows[0].updatedAt > previous",
         arg=previous_update,
     )
     expect(page.locator(".n-message__content").last).to_be_visible()
-    return page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows[0].definition")
+    return page.evaluate("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows[0].definition")
 
 
 def main():
@@ -164,7 +164,7 @@ def main():
             modal.locator(".simple-inference-modal__footer .n-button--primary-type").click()
             expect(modal).to_be_visible()
             expect(page.locator(".n-message__content", has_text="batch_size")).to_be_visible()
-            stored = page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows[0].definition")
+            stored = page.evaluate("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows[0].definition")
             assert stored["steps"][0]["inference_params"] == {"batch_size": 3}
             modal.locator(".simple-inference-grid label").first.locator("input").fill("5")
             saved = persist(page, modal)

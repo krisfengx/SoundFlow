@@ -142,7 +142,7 @@ export const NODE_SPECS: Record<string, NodeSpec> = {
     ],
     widgets: [
       { name: 'audio', type: 'text', default: 'input.wav' },
-      // Runtime input slot name: hosts (pymss-studio inference page / pymss CLI)
+      // Runtime input slot name: hosts (soundflow inference page / pymss CLI)
       // key their inputs mapping by this. Leave empty for graphs that carry
       // their own file path.
       { name: 'input_name', type: 'text', default: '' },

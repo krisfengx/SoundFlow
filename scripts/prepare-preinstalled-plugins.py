@@ -260,7 +260,7 @@ def main() -> None:
     args = parser.parse_args()
     source = args.source
     if source is None and not args.release:
-        local_source = os.environ.get("PYMSS_STUDIO_PLUGINS_SOURCE")
+        local_source = os.environ.get("SOUNDFLOW_PLUGINS_SOURCE")
         if local_source:
             source = Path(local_source)
             if not source.is_absolute():

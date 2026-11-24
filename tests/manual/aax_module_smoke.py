@@ -29,7 +29,7 @@ def main() -> None:
     root = args.output_dir.resolve() / datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
     root.mkdir(parents=True, exist_ok=False)
     environment = os.environ.copy()
-    environment['PYMSS_STUDIO_DATA_ROOT'] = str(root / 'unused-desktop-data')
+    environment['SOUNDFLOW_DATA_ROOT'] = str(root / 'unused-desktop-data')
     results = []
 
     def invoke(name, arguments, behavior='', input_text=None):

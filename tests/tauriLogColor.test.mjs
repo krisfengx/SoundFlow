@@ -37,15 +37,15 @@ function environment({ args = ['dev'], tty = true, env = {} } = {}) {
 }
 
 test('interactive dev forwards color support through Tauri and Cargo', () => {
-  assert.equal(environment().PYMSS_STUDIO_TERMINAL_COLOR, '1')
+  assert.equal(environment().SOUNDFLOW_TERMINAL_COLOR, '1')
   assert.equal(environment().FORCE_COLOR, undefined)
-  assert.equal(environment({ args: ['-v', 'dev', '--config', 'preview.json'] }).PYMSS_STUDIO_TERMINAL_COLOR, '1')
+  assert.equal(environment({ args: ['-v', 'dev', '--config', 'preview.json'] }).SOUNDFLOW_TERMINAL_COLOR, '1')
 })
 
 test('redirected dev output and non-dev commands do not force ANSI', () => {
-  assert.equal(environment({ tty: false }).PYMSS_STUDIO_TERMINAL_COLOR, undefined)
+  assert.equal(environment({ tty: false }).SOUNDFLOW_TERMINAL_COLOR, undefined)
   for (const args of [[], ['build'], ['--help'], ['info']]) {
-    assert.equal(environment({ args }).PYMSS_STUDIO_TERMINAL_COLOR, undefined)
+    assert.equal(environment({ args }).SOUNDFLOW_TERMINAL_COLOR, undefined)
   }
 })
 
@@ -58,6 +58,6 @@ test('explicit color choices and NO_COLOR are preserved', () => {
   }
   assert.deepEqual(environment({ env: { NO_COLOR: '1', FORCE_COLOR: '1' } }), { NO_COLOR: '1', FORCE_COLOR: '1' })
   for (const value of ['0', '1']) {
-    assert.deepEqual(environment({ env: { PYMSS_STUDIO_TERMINAL_COLOR: value } }), { PYMSS_STUDIO_TERMINAL_COLOR: value })
+    assert.deepEqual(environment({ env: { SOUNDFLOW_TERMINAL_COLOR: value } }), { SOUNDFLOW_TERMINAL_COLOR: value })
   }
 })

@@ -63,7 +63,7 @@ def main() -> int:
         environment = os.environ.copy()
         environment["PYMSS_VST_FIXTURE_BEHAVIOR"] = mode
         sandbox = run_dir / f"unused-data-{mode.replace(',', '-')}"
-        environment["PYMSS_STUDIO_DATA_ROOT"] = str(sandbox)
+        environment["SOUNDFLOW_DATA_ROOT"] = str(sandbox)
         scanned = subprocess.run(
             [str(executable), "--plugin-scan", str(bundle)], env=environment,
             capture_output=True, encoding="utf-8", errors="replace", timeout=15, check=True,

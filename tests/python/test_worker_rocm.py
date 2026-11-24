@@ -23,7 +23,7 @@ class RocmCompatibilityTests(unittest.TestCase):
         )
         self.enterContext(mock.patch.dict(sys.modules, {"torch": self.torch}))
         self.enterContext(mock.patch.object(sys, "platform", "win32"))
-        self.enterContext(mock.patch.dict(os.environ, {"PYMSS_STUDIO_ROCM_COMPAT": "auto"}))
+        self.enterContext(mock.patch.dict(os.environ, {"SOUNDFLOW_ROCM_COMPAT": "auto"}))
         self.enterContext(mock.patch.object(worker_rocm, "_native_devices", set()))
         self.enterContext(mock.patch.object(worker_rocm, "_native_enabled", False))
         self.probe = self.enterContext(mock.patch.object(worker_rocm, "_probe_batch_norm"))
@@ -123,7 +123,7 @@ class RocmCompatibilityTests(unittest.TestCase):
         self.probe.assert_not_called()
 
     def test_control_mode_leaves_original_miopen_behavior_unchanged(self):
-        with mock.patch.dict(os.environ, {"PYMSS_STUDIO_ROCM_COMPAT": "off"}):
+        with mock.patch.dict(os.environ, {"SOUNDFLOW_ROCM_COMPAT": "off"}):
             self.assertFalse(worker_rocm.configure_rocm_runtime("auto", [0], self.logger))
         self.probe.assert_not_called()
         self.assertTrue(self.torch.backends.cudnn.enabled)
@@ -149,7 +149,7 @@ class RocmCompatibilityTests(unittest.TestCase):
 
     def test_actual_inference_retry_is_disabled_in_the_control_group(self):
         inference = mock.Mock(side_effect=RuntimeError("miopenStatusUnknownError"))
-        with mock.patch.dict(os.environ, {"PYMSS_STUDIO_ROCM_COMPAT": "off"}), \
+        with mock.patch.dict(os.environ, {"SOUNDFLOW_ROCM_COMPAT": "off"}), \
              self.assertRaisesRegex(RuntimeError, "miopenStatusUnknownError"):
             worker_rocm.run_rocm_inference(inference, "cuda", [0], self.logger)
         inference.assert_called_once()
@@ -167,7 +167,7 @@ class RocmCompatibilityTests(unittest.TestCase):
         def failed_forward():
             raise RuntimeError("miopenStatusUnknownError")
 
-        with mock.patch.dict(os.environ, {"PYMSS_STUDIO_ROCM_COMPAT": "off"}):
+        with mock.patch.dict(os.environ, {"SOUNDFLOW_ROCM_COMPAT": "off"}):
             try:
                 worker_rocm.run_rocm_inference(failed_forward, "cuda", [0], self.logger)
             except RuntimeError as error:
@@ -214,7 +214,7 @@ class RocmCompatibilityTests(unittest.TestCase):
         self.assertEqual(worker_rocm.run_rocm_inference(inference, "cuda", [0], self.logger), "stems")
 
     def test_forced_native_mode_checks_all_gpus_without_using_miopen(self):
-        with mock.patch.dict(os.environ, {"PYMSS_STUDIO_ROCM_COMPAT": "native"}):
+        with mock.patch.dict(os.environ, {"SOUNDFLOW_ROCM_COMPAT": "native"}):
             self.assertTrue(worker_rocm.configure_rocm_runtime("auto", [0, 1], self.logger))
         self.assertFalse(self.torch.backends.cudnn.enabled)
         self.assertEqual(self.probe.call_args_list, [

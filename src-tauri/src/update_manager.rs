@@ -46,7 +46,7 @@ static UPDATE_RESTART_REQUIRED: AtomicBool = AtomicBool::new(false);
 pub fn restart_required() -> bool {
     UPDATE_RESTART_REQUIRED.load(Ordering::SeqCst)
 }
-const UPDATE_ROOT: &str = "https://github.com/pymss-project/pymss-studio/releases/download/updater";
+const UPDATE_ROOT: &str = "https://github.com/krisfengx/SoundFlow/releases/download/updater";
 const UPDATE_GENERATION: &str = "v1";
 const DEFAULT_UPDATE_PUBLIC_KEY: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE5NzUyREY2NjAyNDVDQjAKUldTd1hDUmc5aTExcVFtUGM3ajB4R09ueU9xM3B6RG9xRDVKaUM0di9Qc1BpSGhYMXRFNUJvSWQK";
 // Test fixtures can provide a matching signing key without changing the
@@ -56,12 +56,12 @@ const UPDATE_PUBLIC_KEY: &str = match option_env!("PYMSS_UPDATE_PUBLIC_KEY") {
     None => DEFAULT_UPDATE_PUBLIC_KEY,
 };
 // Replace the executable last so an interrupted update can still boot the old UI and recover.
-const MANAGED_PATHS: [&str; 3] = ["python", "bin", "Pymss Studio.exe"];
+const MANAGED_PATHS: [&str; 3] = ["python", "bin", "SoundFlow.exe"];
 const MAX_UPDATE_ARCHIVE_BYTES: u64 = 512 * 1024 * 1024;
 const MAX_UPDATE_FILES: usize = 10_000;
 const MAX_UPDATE_EXTRACTED_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 const UPDATE_MUTEX_NAME: &str = "Local\\PymssStudioManagedUpdate";
-const UPDATE_HELPER_PREFIX: &str = "pymss-studio-runtime-host";
+const UPDATE_HELPER_PREFIX: &str = "soundflow-runtime-host";
 const ERROR_ELEVATION_REQUIRED: i32 = 740;
 // Apply an upper bound to connection setup and stalled reads without imposing a total
 // deadline on the archive download. Managed update archives can be large on slower links.
@@ -280,10 +280,10 @@ pub fn current_distribution() -> Option<DistributionKind> {
 }
 
 fn distribution_at(root: &Path) -> Option<DistributionKind> {
-    if root.join("pymss-studio.inno-install").is_file() {
+    if root.join("soundflow.inno-install").is_file() {
         return Some(DistributionKind::Inno);
     }
-    if root.join("pymss-studio.portable").is_file() {
+    if root.join("soundflow.portable").is_file() {
         return Some(DistributionKind::Portable);
     }
     None
@@ -850,7 +850,7 @@ fn configure_updater(app: &AppHandle, builder: UpdaterBuilder) -> AppResult<Upda
 fn source_client(app: &AppHandle) -> AppResult<reqwest::Client> {
     let (direct, proxy) = updater_proxy(app)?;
     configure_update_client(update_sources::http_client_builder(), direct, proxy)
-        .user_agent("Pymss-Studio-Updater")
+        .user_agent("SoundFlow-Updater")
         .timeout(UPDATE_CHECK_TIMEOUT)
         .build()
         .map_err(|error| AppError::Worker(error.to_string()))
@@ -912,7 +912,7 @@ fn stage_update(root: &Path, version: &str, signature: &str, bytes: &[u8]) -> Ap
         return Err(AppError::Worker("A previous managed update requires recovery before another update can start".into()));
     }
     let update_mutex = acquire_update_mutex()?;
-    let elevated = root.join("pymss-studio.inno-install").is_file() || !app_root_is_writable(root);
+    let elevated = root.join("soundflow.inno-install").is_file() || !app_root_is_writable(root);
     let archive = if elevated {
         pending_archive_path()
     } else {
@@ -979,7 +979,7 @@ fn spawn_helper(args: &[std::ffi::OsString], elevated: bool) -> AppResult<()> {
 }
 
 fn recover_interrupted_update(pid: u32, root: PathBuf, backup: PathBuf, elevated: bool) -> AppResult<()> {
-    wait_for_process_exit(pid, &root.join("Pymss Studio.exe"))?;
+    wait_for_process_exit(pid, &root.join("SoundFlow.exe"))?;
     let _update_mutex = acquire_update_mutex()?;
     recover_interrupted_update_with(&root, &backup, || relaunch_application_if_needed(&root, elevated))
 }
@@ -988,7 +988,7 @@ fn recover_interrupted_update_with(
     root: &Path, backup: &Path, relaunch: impl FnOnce() -> AppResult<()>,
 ) -> AppResult<()> {
     if distribution_at(root).is_none() {
-        return Err(AppError::Worker("The recovery target is not a managed Pymss Studio installation".into()));
+        return Err(AppError::Worker("The recovery target is not a managed SoundFlow installation".into()));
     }
     let transaction = read_update_transaction(root)?
         .ok_or_else(|| AppError::Worker("Interrupted update transaction is missing".into()))?;
@@ -1012,7 +1012,7 @@ fn recover_or_relaunch(root: &Path, elevated: bool) -> AppResult<()> {
 
 fn recover_or_relaunch_with(root: &Path, relaunch: impl FnOnce() -> AppResult<()>) -> AppResult<()> {
     if distribution_at(root).is_none() {
-        return Err(AppError::Worker("The recovery target is not a managed Pymss Studio installation".into()));
+        return Err(AppError::Worker("The recovery target is not a managed SoundFlow installation".into()));
     }
     if let Some(transaction) = read_update_transaction(root)? {
         let backup = PathBuf::from(transaction.backup_dir);
@@ -1114,7 +1114,7 @@ fn extract_portable_payload(bytes: &[u8], stage: &Path) -> AppResult<()> {
         let mut output = fs::File::create(destination)?;
         std::io::copy(&mut entry, &mut output)?;
     }
-    for required in ["Pymss Studio.exe", "python/worker.py"] {
+    for required in ["SoundFlow.exe", "python/worker.py"] {
         if !stage.join(required).is_file() {
             let _ = fs::remove_dir_all(stage);
             return Err(AppError::Worker(format!("Portable update archive is missing {required}")));
@@ -1128,7 +1128,7 @@ fn validate_payload_path(path: &Path) -> AppResult<()> {
     let Some(Component::Normal(top)) = components.next() else {
         return Err(AppError::Worker("Portable update archive contains an invalid path".into()));
     };
-    if !matches!(top.to_str(), Some("Pymss Studio.exe" | "python" | "bin")) {
+    if !matches!(top.to_str(), Some("SoundFlow.exe" | "python" | "bin")) {
         return Err(AppError::Worker("Portable update archive contains an unmanaged file".into()));
     }
     if path.components().any(|component| !matches!(component, Component::Normal(_))) {
@@ -1149,11 +1149,11 @@ fn apply_managed_update(
     signature: String,
     elevated: bool,
 ) -> AppResult<()> {
-    wait_for_process_exit(pid, &root.join("Pymss Studio.exe"))?;
+    wait_for_process_exit(pid, &root.join("SoundFlow.exe"))?;
     let _update_mutex = acquire_update_mutex()?;
     validate_update_version(&version)?;
     let distribution = distribution_at(&root)
-        .ok_or_else(|| AppError::Worker("The update target is not a managed Pymss Studio installation".into()))?;
+        .ok_or_else(|| AppError::Worker("The update target is not a managed SoundFlow installation".into()))?;
     let inno_install = matches!(distribution, DistributionKind::Inno);
     if !elevated && (inno_install || !app_root_is_writable(&root)) {
         return Err(AppError::Worker("The application update helper was not started with the required administrator permission".into()));
@@ -1189,7 +1189,7 @@ fn apply_managed_update(
         return Err(error);
     }
     let backup = root.join(format!(
-        ".pymss-studio-update-backup-{}-{}",
+        ".soundflow-update-backup-{}-{}",
         std::process::id(),
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -1216,7 +1216,7 @@ fn apply_managed_update(
             }
             let current = root.join(name);
             if current.exists() {
-                if name == "Pymss Studio.exe" {
+                if name == "SoundFlow.exe" {
                     replace_executable(&current, &stage.join(name), Some(&backup.join(name)))?;
                     moved.push(name);
                     replaced.push(name);
@@ -1365,12 +1365,12 @@ fn replace_executable(current: &Path, replacement: &Path, backup: Option<&Path>)
 }
 
 fn transaction_path(root: &Path) -> PathBuf {
-    root.join(".pymss-studio-update-transaction.json")
+    root.join(".soundflow-update-transaction.json")
 }
 
 fn write_update_transaction(root: &Path, backup: &Path, phase: UpdatePhase) -> AppResult<()> {
     let path = transaction_path(root);
-    let temporary = root.join(format!(".pymss-studio-update-transaction-{}.tmp", std::process::id()));
+    let temporary = root.join(format!(".soundflow-update-transaction-{}.tmp", std::process::id()));
     let content = serde_json::to_vec(&UpdateTransaction {
         backup_dir: backup.to_string_lossy().to_string(),
         phase,
@@ -1473,7 +1473,7 @@ fn quarantine_update_transaction(root: &Path) -> AppResult<()> {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_nanos();
-    let destination = root.join(format!(".pymss-studio-update-transaction.invalid-{stamp}"));
+    let destination = root.join(format!(".soundflow-update-transaction.invalid-{stamp}"));
     fs::rename(source, destination)?;
     Ok(())
 }
@@ -1491,7 +1491,7 @@ fn validate_backup_path(root: &Path, backup: &Path) -> AppResult<()> {
     let valid_name = backup
         .file_name()
         .and_then(|value| value.to_str())
-        .is_some_and(|value| value.starts_with(".pymss-studio-update-backup-"));
+        .is_some_and(|value| value.starts_with(".soundflow-update-backup-"));
     if !valid_name {
         return Err(AppError::Worker("Update backup has an invalid directory name".into()));
     }
@@ -1539,16 +1539,16 @@ fn update_stage_path(root: &Path, version: &str) -> PathBuf {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis();
-    root.join("update").join(format!("pymss-studio-{version}-{stamp}"))
+    root.join("update").join(format!("soundflow-{version}-{stamp}"))
 }
 
 fn update_archive_path(root: &Path, version: &str) -> PathBuf {
     let _ = version;
-    root.join("update").join("pymss-studio-pending.zip")
+    root.join("update").join("soundflow-pending.zip")
 }
 
 fn pending_archive_path() -> PathBuf {
-    std::env::temp_dir().join("pymss-studio-pending.zip")
+    std::env::temp_dir().join("soundflow-pending.zip")
 }
 
 fn verify_updated_application(root: &Path, elevated: bool, mut child: std::process::Child) -> AppResult<()> {
@@ -1568,14 +1568,14 @@ fn verify_updated_application(root: &Path, elevated: bool, mut child: std::proce
 fn launch_application(root: &Path, elevated: bool) -> AppResult<std::process::Child> {
     if elevated {
         // Reuse the user's Explorer process so the normal UI does not inherit the helper's UAC token.
-        return Ok(Command::new("explorer.exe").arg(root.join("Pymss Studio.exe")).spawn()?);
+        return Ok(Command::new("explorer.exe").arg(root.join("SoundFlow.exe")).spawn()?);
     }
-    Ok(Command::new(root.join("Pymss Studio.exe")).spawn()?)
+    Ok(Command::new(root.join("SoundFlow.exe")).spawn()?)
 }
 
 #[cfg(windows)]
 fn verify_elevated_application(root: &Path) -> AppResult<()> {
-    let exe = root.join("Pymss Studio.exe");
+    let exe = root.join("SoundFlow.exe");
     let mut observed = false;
     for _ in 0..80 {
         if application_is_running(&exe)? {
@@ -1596,7 +1596,7 @@ fn verify_elevated_application(root: &Path) -> AppResult<()> {
 fn application_is_running(exe: &Path) -> AppResult<bool> {
     let path = quote_powershell_arg(&exe.to_string_lossy());
     let command = format!(
-        "$process = Get-Process -Name 'Pymss Studio' -ErrorAction SilentlyContinue | Where-Object {{ $_.Path -eq {path} }} | Select-Object -First 1; if ($null -ne $process) {{ exit 0 }}; exit 1"
+        "$process = Get-Process -Name 'SoundFlow' -ErrorAction SilentlyContinue | Where-Object {{ $_.Path -eq {path} }} | Select-Object -First 1; if ($null -ne $process) {{ exit 0 }}; exit 1"
     );
     let status = Command::new("powershell.exe")
         .args(["-NoProfile", "-NonInteractive", "-Command", &command])
@@ -1607,7 +1607,7 @@ fn application_is_running(exe: &Path) -> AppResult<bool> {
 
 #[cfg(not(windows))]
 fn launch_application(root: &Path, _elevated: bool) -> AppResult<std::process::Child> {
-    Ok(Command::new(root.join("Pymss Studio.exe")).spawn()?)
+    Ok(Command::new(root.join("SoundFlow.exe")).spawn()?)
 }
 
 #[cfg(not(windows))]
@@ -1636,7 +1636,7 @@ fn wait_for_process_exit(pid: u32, executable: &Path) -> AppResult<()> {
 
 fn relaunch_application_if_needed(root: &Path, elevated: bool) -> AppResult<()> {
     #[cfg(windows)]
-    if application_is_running(&root.join("Pymss Studio.exe"))? {
+    if application_is_running(&root.join("SoundFlow.exe"))? {
         // A second copy can still be alive after an update attempt failed. Do not
         // launch another copy on top of it; repeated retries would otherwise
         // accumulate processes and keep the executable locked.
@@ -1652,7 +1652,7 @@ fn wait_for_process_exit(_pid: u32, _executable: &Path) -> AppResult<()> {
 }
 
 fn app_root_is_writable(root: &Path) -> bool {
-    let probe = root.join(format!(".pymss-studio-update-probe-{}", std::process::id()));
+    let probe = root.join(format!(".soundflow-update-probe-{}", std::process::id()));
     match fs::write(&probe, b"update") {
         Ok(()) => {
             let _ = fs::remove_file(probe);
@@ -1772,7 +1772,7 @@ fn restore_portable_backup(root: &Path, backup: &Path) -> AppResult<()> {
             continue;
         }
         let replacement = root.join(name);
-        if name == "Pymss Studio.exe" && replacement.exists() {
+        if name == "SoundFlow.exe" && replacement.exists() {
             replace_executable(&replacement, &previous, None)?;
             continue;
         }
@@ -1800,7 +1800,7 @@ fn rollback_partial_replacement(
         if !replacement.exists() {
             continue;
         }
-        if *name == "Pymss Studio.exe" {
+        if *name == "SoundFlow.exe" {
             continue;
         }
         let result = if replacement.is_dir() {
@@ -1819,7 +1819,7 @@ fn rollback_partial_replacement(
             continue;
         }
         if destination.exists() {
-            if *name == "Pymss Studio.exe" {
+            if *name == "SoundFlow.exe" {
                 if let Err(error) = replace_executable(&destination, &previous, None) {
                     failures.push(format!("unable to restore {name}: {error}"));
                 }
@@ -1972,7 +1972,7 @@ mod tests {
     #[test]
     fn update_payload_rejects_unmanaged_paths() {
         assert!(validate_payload_path(Path::new("data/settings/app.json")).is_err());
-        assert!(validate_payload_path(Path::new("../Pymss Studio.exe")).is_err());
+        assert!(validate_payload_path(Path::new("../SoundFlow.exe")).is_err());
         assert!(validate_payload_path(Path::new("python/../worker.py")).is_err());
         assert!(validate_payload_path(Path::new("python/worker.py")).is_ok());
     }
@@ -2039,7 +2039,7 @@ mod tests {
     fn managed_updates_use_the_v1_endpoint() {
         assert_eq!(
             managed_endpoint(UpdateChannel::Stable).as_str(),
-            format!("https://github.com/pymss-project/pymss-studio/releases/download/updater/{}", crate::update_sources::metadata_name("stable", "v1")),
+            format!("https://github.com/krisfengx/SoundFlow/releases/download/updater/{}", crate::update_sources::metadata_name("stable", "v1")),
         );
     }
 
@@ -2098,20 +2098,20 @@ mod tests {
 
     #[test]
     fn release_signature_cannot_be_reused_for_another_version() {
-        let signature = "untrusted comment: signature from tauri secret key\nRUSwXCRg9i11qZVeGcC91Q+ga6LNd9cnA5apzJD88EF9u5pWcmzJSRISDih2gqePAAT6XxRH4N73pv9RKnYnQ8E4Pca958Nf+Ag=\ntrusted comment: timestamp:1792132803\tfile:Pymss-Studio-0.0.20-windows-x64-update.zip\nKgHDaCK/VlKdFjhEV5Z/G+YmfoHBwkhRzSiwXXh/ZCcxmp6BDLxEw/9MucO2waR2s2FWAUa+0h1isXVdymJHBw==\n";
+        let signature = "untrusted comment: signature from tauri secret key\nRUSwXCRg9i11qZVeGcC91Q+ga6LNd9cnA5apzJD88EF9u5pWcmzJSRISDih2gqePAAT6XxRH4N73pv9RKnYnQ8E4Pca958Nf+Ag=\ntrusted comment: timestamp:1792132803\tfile:SoundFlow-0.0.20-windows-x64-update.zip\nKgHDaCK/VlKdFjhEV5Z/G+YmfoHBwkhRzSiwXXh/ZCcxmp6BDLxEw/9MucO2waR2s2FWAUa+0h1isXVdymJHBw==\n";
         // This test checks filename binding before cryptographic verification.
-        let signature = signature.replace("Pymss-Studio-0.0.20-windows-x64-update.zip", &crate::update_sources::archive_name("0.0.20"));
+        let signature = signature.replace("SoundFlow-0.0.20-windows-x64-update.zip", &crate::update_sources::archive_name("0.0.20"));
         let encoded = base64::engine::general_purpose::STANDARD.encode(&signature);
         assert!(super::decode_release_signature(&encoded, "0.0.20").is_ok());
         assert!(super::decode_release_signature(&encoded, "99.0.0").is_err());
-        let duplicate = signature.replace("\nKgHD", "\tfile:Pymss-Studio-0.0.20-windows-x64-update.zip\nKgHD");
+        let duplicate = signature.replace("\nKgHD", "\tfile:SoundFlow-0.0.20-windows-x64-update.zip\nKgHD");
         assert!(super::decode_release_signature(&base64::engine::general_purpose::STANDARD.encode(duplicate), "0.0.20").is_err());
     }
 
     #[test]
     fn automatic_download_fallbacks_keep_the_same_release_and_explicit_sources_stay_explicit() {
         use crate::update_sources::{UpdateProvider, UpdateSource};
-        let original = url::Url::parse(&format!("https://github.com/pymss-project/pymss-studio/releases/download/v0.0.20/{}", crate::update_sources::archive_name("0.0.20"))).unwrap();
+        let original = url::Url::parse(&format!("https://github.com/krisfengx/SoundFlow/releases/download/v0.0.20/{}", crate::update_sources::archive_name("0.0.20"))).unwrap();
         let candidates = super::download_candidates("0.0.20", &original, UpdateProvider::Github, UpdateSource::Auto).unwrap();
         assert_eq!(candidates.len(), 2);
         assert_eq!(candidates[0], (UpdateProvider::Github, original.clone()));
@@ -2128,7 +2128,7 @@ mod tests {
     #[ignore = "Downloads and verifies the public signed update ZIP without installing it"]
     fn live_modelscope_signed_package() {
         tauri::async_runtime::block_on(async {
-            let client = crate::update_sources::http_client_builder().user_agent("Pymss-Studio-Updater").timeout(std::time::Duration::from_secs(45)).build().unwrap();
+            let client = crate::update_sources::http_client_builder().user_agent("SoundFlow-Updater").timeout(std::time::Duration::from_secs(45)).build().unwrap();
             let manifest = crate::update_sources::modelscope_manifest(&client, "prerelease-v1-windows-x64-update.json").await.unwrap();
             let raw: serde_json::Value = client.get(manifest.endpoint).send().await.unwrap().json().await.unwrap();
             let version = raw["version"].as_str().unwrap();
@@ -2152,7 +2152,7 @@ mod tests {
             "pymss-update-transaction-test-{}",
             std::process::id()
         ));
-        let backup = root.join(".pymss-studio-update-backup-test");
+        let backup = root.join(".soundflow-update-backup-test");
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(&root).unwrap();
 
@@ -2166,7 +2166,7 @@ mod tests {
 
     #[test]
     fn update_payload_stage_stays_in_application_directory() {
-        let root = PathBuf::from("C:/Pymss Studio");
+        let root = PathBuf::from("C:/SoundFlow");
         let stage = update_stage_path(&root, "1.2.3");
         assert_eq!(stage.parent().and_then(Path::parent), Some(root.as_path()));
         assert_eq!(stage.parent().and_then(Path::file_name), Some(std::ffi::OsStr::new("update")));
@@ -2174,7 +2174,7 @@ mod tests {
 
     #[test]
     fn update_archive_stays_in_application_update_directory() {
-        let root = PathBuf::from("C:/Pymss Studio");
+        let root = PathBuf::from("C:/SoundFlow");
         let archive = update_archive_path(&root, "1.2.3");
         assert_eq!(archive.parent().and_then(Path::parent), Some(root.as_path()));
         assert_eq!(archive.parent().and_then(Path::file_name), Some(std::ffi::OsStr::new("update")));
@@ -2183,39 +2183,39 @@ mod tests {
 
     #[test]
     fn protected_update_uses_a_stable_pending_archive_name() {
-        assert_eq!(pending_archive_path().file_name().and_then(|name| name.to_str()), Some("pymss-studio-pending.zip"));
+        assert_eq!(pending_archive_path().file_name().and_then(|name| name.to_str()), Some("soundflow-pending.zip"));
     }
 
     #[test]
     fn only_marked_directories_are_managed_update_targets() {
-        let root = std::env::temp_dir().join(format!("pymss-studio-update-target-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("soundflow-update-target-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(&root).unwrap();
         assert!(distribution_at(&root).is_none());
 
-        fs::write(root.join("pymss-studio.portable"), "portable").unwrap();
+        fs::write(root.join("soundflow.portable"), "portable").unwrap();
         assert!(matches!(distribution_at(&root), Some(DistributionKind::Portable)));
 
-        fs::write(root.join("pymss-studio.inno-install"), "managed").unwrap();
+        fs::write(root.join("soundflow.inno-install"), "managed").unwrap();
         assert!(matches!(distribution_at(&root), Some(DistributionKind::Inno)));
         let _ = fs::remove_dir_all(root);
     }
 
     #[test]
     fn interrupted_update_restores_only_paths_that_were_backed_up() {
-        let root = std::env::temp_dir().join(format!("pymss-studio-recovery-{}", std::process::id()));
-        let backup = root.join(".pymss-studio-update-backup-test");
+        let root = std::env::temp_dir().join(format!("soundflow-recovery-{}", std::process::id()));
+        let backup = root.join(".soundflow-update-backup-test");
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(root.join("python")).unwrap();
         fs::create_dir_all(&backup).unwrap();
         fs::write(root.join("python").join("original.txt"), "original").unwrap();
         fs::create_dir_all(root.join("bin")).unwrap();
         fs::write(root.join("bin").join("original.txt"), "original-bin").unwrap();
-        fs::write(backup.join("Pymss Studio.exe"), "old-exe").unwrap();
+        fs::write(backup.join("SoundFlow.exe"), "old-exe").unwrap();
 
         restore_portable_backup(&root, &backup).unwrap();
 
-        assert_eq!(fs::read_to_string(root.join("Pymss Studio.exe")).unwrap(), "old-exe");
+        assert_eq!(fs::read_to_string(root.join("SoundFlow.exe")).unwrap(), "old-exe");
         assert_eq!(fs::read_to_string(root.join("python").join("original.txt")).unwrap(), "original");
         assert_eq!(fs::read_to_string(root.join("bin").join("original.txt")).unwrap(), "original-bin");
         let _ = fs::remove_dir_all(root);

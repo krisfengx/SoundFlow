@@ -454,7 +454,7 @@ class RuntimeOverlayUpdateTests(unittest.TestCase):
                 self.assertEqual(error["manifestStatus"], "newer" if value == "2026.10.1" else "unknown")
                 self.assertEqual(error["runtimeManifestVersion"], value)
                 self.assertEqual(error["appManifestVersion"], "2026.09.3")
-                self.assertIn("Update Pymss Studio first", error["message"])
+                self.assertIn("Update SoundFlow first", error["message"])
                 self.assertEqual(json.loads(self.active.read_text(encoding="utf-8"))["manifestVersion"], value)
 
     def test_repair_accepts_legacy_manifest_and_rebuilds_overlay(self):

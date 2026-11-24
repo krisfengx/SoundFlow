@@ -68,11 +68,11 @@ class WorkerProtocolTests(unittest.TestCase):
             output = io.StringIO()
             stderr = io.StringIO()
             with mock.patch.dict(os.environ, {
-                "PYMSS_STUDIO_LOG_TRANSPORT": "protocol",
-                "PYMSS_STUDIO_DEBUG_LOG": "1",
-                "PYMSS_STUDIO_TERMINAL_LOG": "1",
-                "PYMSS_STUDIO_SESSION_LOG": str(session),
-                "PYMSS_STUDIO_PERSISTENT_LOG": str(persistent),
+                "SOUNDFLOW_LOG_TRANSPORT": "protocol",
+                "SOUNDFLOW_DEBUG_LOG": "1",
+                "SOUNDFLOW_TERMINAL_LOG": "1",
+                "SOUNDFLOW_SESSION_LOG": str(session),
+                "SOUNDFLOW_PERSISTENT_LOG": str(persistent),
             }), redirect_stdout(output), redirect_stderr(stderr):
                 worker_protocol.debug_log("worker.start", command="infer", token="private-value")
             event = json.loads(output.getvalue())
@@ -89,11 +89,11 @@ class WorkerProtocolTests(unittest.TestCase):
             output = io.StringIO()
             stderr = io.StringIO()
             with mock.patch.dict(os.environ, {
-                "PYMSS_STUDIO_LOG_TRANSPORT": "",
-                "PYMSS_STUDIO_DEBUG_LOG": "1",
-                "PYMSS_STUDIO_TERMINAL_LOG": "1",
-                "PYMSS_STUDIO_SESSION_LOG": str(session),
-                "PYMSS_STUDIO_PERSISTENT_LOG": "",
+                "SOUNDFLOW_LOG_TRANSPORT": "",
+                "SOUNDFLOW_DEBUG_LOG": "1",
+                "SOUNDFLOW_TERMINAL_LOG": "1",
+                "SOUNDFLOW_SESSION_LOG": str(session),
+                "SOUNDFLOW_PERSISTENT_LOG": "",
             }), redirect_stdout(output), redirect_stderr(stderr):
                 worker_protocol.debug_log("worker.start", command="infer", token="private-value")
             self.assertIn("PY worker.start command=infer", session.read_text(encoding="utf-8"))
@@ -132,7 +132,7 @@ class WorkerProtocolTests(unittest.TestCase):
         self.addCleanup(root.removeHandler, console)
         output = io.StringIO()
         stderr = io.StringIO()
-        with mock.patch.dict(os.environ, {"PYMSS_STUDIO_LOG_TRANSPORT": "protocol"}), redirect_stdout(output), redirect_stderr(stderr):
+        with mock.patch.dict(os.environ, {"SOUNDFLOW_LOG_TRANSPORT": "protocol"}), redirect_stdout(output), redirect_stderr(stderr):
             try:
                 with worker_protocol.protocol_logging("infer", task_id="file-one"):
                     logging.getLogger("library.model").error("Load failed")
@@ -165,8 +165,8 @@ class WorkerProtocolTests(unittest.TestCase):
                 output = io.StringIO()
                 root.setLevel(logging.WARNING)
                 with mock.patch.dict(os.environ, {
-                    "PYMSS_STUDIO_LOG_TRANSPORT": "protocol",
-                    "PYMSS_STUDIO_DEBUG_LOG": enabled,
+                    "SOUNDFLOW_LOG_TRANSPORT": "protocol",
+                    "SOUNDFLOW_DEBUG_LOG": enabled,
                 }), redirect_stdout(output), redirect_stderr(io.StringIO()):
                     with worker_protocol.protocol_logging("env_info"):
                         root.debug("Environment probe started")
@@ -200,8 +200,8 @@ class WorkerProtocolTests(unittest.TestCase):
         output = io.StringIO()
 
         with mock.patch.dict(os.environ, {
-            "PYMSS_STUDIO_LOG_TRANSPORT": "protocol",
-            "PYMSS_STUDIO_DEBUG_LOG": "1",
+            "SOUNDFLOW_LOG_TRANSPORT": "protocol",
+            "SOUNDFLOW_DEBUG_LOG": "1",
         }), redirect_stdout(output), redirect_stderr(io.StringIO()):
             with worker_protocol.protocol_logging("export_editor_mix", task_id="export-one"):
                 self.assertEqual(numba_parent.level, logging.WARNING)
@@ -244,7 +244,7 @@ class WorkerProtocolTests(unittest.TestCase):
     def test_file_log_scope_restores_its_parent_after_an_exception(self) -> None:
         output = io.StringIO()
         previous_task = worker_protocol.current_log_task_id()
-        with mock.patch.dict(os.environ, {"PYMSS_STUDIO_LOG_TRANSPORT": "protocol"}), \
+        with mock.patch.dict(os.environ, {"SOUNDFLOW_LOG_TRANSPORT": "protocol"}), \
              redirect_stdout(output), redirect_stderr(io.StringIO()):
             with worker_protocol.protocol_logging("infer", task_id="first", batch=True):
                 logging.warning("Before files")
@@ -294,7 +294,7 @@ class WorkerProtocolTests(unittest.TestCase):
                 for encoder in encoders:
                     value = encoder(value)
                 output = io.StringIO()
-                with mock.patch.dict(os.environ, {"PYMSS_STUDIO_LOG_TRANSPORT": "protocol"}), \
+                with mock.patch.dict(os.environ, {"SOUNDFLOW_LOG_TRANSPORT": "protocol"}), \
                      redirect_stdout(output), redirect_stderr(io.StringIO()):
                     with worker_protocol.protocol_logging("infer", task_id="task-one"):
                         logger = logging.getLogger("library.http")
@@ -316,7 +316,7 @@ class WorkerProtocolTests(unittest.TestCase):
             for nesting in range(worker_protocol.MAX_LOG_TEXT_NESTING + 3):
                 with self.subTest(encoder=encoder.__name__, nesting=nesting):
                     output = io.StringIO()
-                    with mock.patch.dict(os.environ, {"PYMSS_STUDIO_LOG_TRANSPORT": "protocol"}), \
+                    with mock.patch.dict(os.environ, {"SOUNDFLOW_LOG_TRANSPORT": "protocol"}), \
                          redirect_stdout(output), redirect_stderr(io.StringIO()):
                         with worker_protocol.protocol_logging("infer", task_id="task-one"):
                             logging.getLogger("library.http").error("Request rejected: %s", message)
@@ -354,7 +354,7 @@ class WorkerProtocolTests(unittest.TestCase):
         for valid_utf8, body in ((True, json.dumps(document, ensure_ascii=False).encode("utf-8")), (False, b'{"password":"prefix \\"quoted\\" private-suffix","label":"\xff"}')):
             with self.subTest(valid_utf8=valid_utf8):
                 output = io.StringIO()
-                with mock.patch.dict(os.environ, {"PYMSS_STUDIO_LOG_TRANSPORT": "protocol"}), \
+                with mock.patch.dict(os.environ, {"SOUNDFLOW_LOG_TRANSPORT": "protocol"}), \
                      redirect_stdout(output), redirect_stderr(io.StringIO()):
                     with worker_protocol.protocol_logging("infer", task_id="task-one"):
                         logging.getLogger("library.http").error("Request rejected: %r", body)

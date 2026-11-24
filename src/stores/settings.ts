@@ -96,6 +96,10 @@ type StoredSettings = {
   developerMode?: boolean
   modelDir?: string
   outputDir?: string
+  modelCacheDir?: string
+  runtimeEnvsDir?: string
+  closeBehavior?: CloseBehavior
+  torchSource?: TorchSource
   defaultDevice?: string
   defaultFormat?: string
   downloadSource?: string
@@ -121,7 +125,18 @@ type StoredSettings = {
 }
 
 export type ProxyMode = 'system' | 'none' | 'custom'
+export type CloseBehavior = 'ask' | 'minimize' | 'quit'
+export type TorchSource = 'official' | 'sjtu' | 'aliyun'
 export type DownloadMethod = 'aria2c' | 'urllib'
+
+export function normalizeCloseBehavior(value: unknown): CloseBehavior {
+  return value === 'minimize' || value === 'quit' ? value : 'ask'
+}
+
+export function normalizeTorchSource(value: unknown): TorchSource {
+  return value === 'sjtu' || value === 'aliyun' ? value : 'official'
+}
+
 export type UpdateChannel = 'stable' | 'prerelease'
 export type UpdateSource = 'auto' | 'github' | 'modelscope'
 
@@ -253,6 +268,11 @@ export const useSettingsStore = defineStore('settings', () => {
   const developerMode = ref(false)
   const modelDir = ref('')
   const outputDir = ref('')
+  const modelCacheDir = ref('')
+  // Empty means "use the app's built-in default" (<repo>/.venv/python/runtime-envs in dev).
+  const runtimeEnvsDir = ref('')
+  const closeBehavior = ref<CloseBehavior>('ask')
+  const torchSource = ref<TorchSource>('official')
   const defaultDevice = ref(DEFAULT_DEFAULT_DEVICE)
   const defaultFormat = ref(DEFAULT_DEFAULT_FORMAT)
   const downloadSource = ref(DEFAULT_DOWNLOAD_SOURCE)
@@ -293,6 +313,10 @@ export const useSettingsStore = defineStore('settings', () => {
     developerMode: developerMode.value,
     modelDir: modelDir.value,
     outputDir: outputDir.value,
+    modelCacheDir: modelCacheDir.value.trim() || undefined,
+    runtimeEnvsDir: runtimeEnvsDir.value.trim() || undefined,
+    closeBehavior: closeBehavior.value,
+    torchSource: torchSource.value,
     defaultDevice: defaultDevice.value,
     defaultFormat: defaultFormat.value,
     downloadSource: downloadSource.value,
@@ -315,6 +339,11 @@ export const useSettingsStore = defineStore('settings', () => {
     updateSource: updateSource.value,
     updateEndpointOverride: updateEndpointOverride.value.trim() || undefined,
   }))
+
+  async function applyModelCacheDir(path: string) {
+    modelCacheDir.value = path
+    await saveAppStore('app-settings', persistable.value)
+  }
 
   let saveTimer: ReturnType<typeof setTimeout> | null = null
   let persistErrorReported = false
@@ -345,6 +374,11 @@ export const useSettingsStore = defineStore('settings', () => {
     }, 80)
   }
 
+  async function refreshAppPaths() {
+    if (!isTauriRuntime()) return
+    appPaths.value = await invoke<AppPathsPayload>('get_app_paths')
+  }
+
   async function initialize() {
     if (initialized.value) return
     const [paths, stored] = await Promise.all([
@@ -361,6 +395,10 @@ export const useSettingsStore = defineStore('settings', () => {
     developerMode.value = stored?.developerMode === true
     modelDir.value = (stored?.modelDir || paths.modelsDir).trim() || paths.modelsDir
     outputDir.value = (stored?.outputDir || paths.outputsDir).trim() || paths.outputsDir
+    modelCacheDir.value = String(stored?.modelCacheDir || '').trim()
+    runtimeEnvsDir.value = String(stored?.runtimeEnvsDir || '').trim()
+    closeBehavior.value = normalizeCloseBehavior(stored?.closeBehavior)
+    torchSource.value = normalizeTorchSource(stored?.torchSource)
     defaultDevice.value = stored?.defaultDevice || DEFAULT_DEFAULT_DEVICE
     defaultFormat.value = stored?.defaultFormat || DEFAULT_DEFAULT_FORMAT
     downloadSource.value = stored?.downloadSource || DEFAULT_DOWNLOAD_SOURCE
@@ -434,6 +472,9 @@ export const useSettingsStore = defineStore('settings', () => {
     [
       modelDir,
       outputDir,
+      runtimeEnvsDir,
+      closeBehavior,
+      torchSource,
       defaultDevice,
       defaultFormat,
       downloadSource,
@@ -555,6 +596,21 @@ export const useSettingsStore = defineStore('settings', () => {
 
   async function pickFolder() {
     return invoke<string | null>('pick_output_folder')
+  }
+
+  type RuntimeDirMigrationResult = {
+    runtimeEnvsDir: string
+    moved: boolean
+    backends?: string[]
+  }
+
+  async function migrateRuntimeEnvDir(targetDir: string): Promise<RuntimeDirMigrationResult> {
+    const result = await invoke<RuntimeDirMigrationResult>('migrate_runtime_envs', {
+      payload: { targetDir },
+    })
+    runtimeEnvsDir.value = result.runtimeEnvsDir
+    await saveAppStore('app-settings', persistable.value)
+    return result
   }
 
   async function refreshModelDataAfterDirChange() {
@@ -919,6 +975,8 @@ export const useSettingsStore = defineStore('settings', () => {
   return {
     initialized,
     appPaths,
+    refreshAppPaths,
+    applyModelCacheDir,
     dataRoot,
     settingsDir,
     editorProjectsDir,
@@ -934,6 +992,10 @@ export const useSettingsStore = defineStore('settings', () => {
     developerMode,
     modelDir,
     outputDir,
+    modelCacheDir,
+    runtimeEnvsDir,
+    closeBehavior,
+    torchSource,
     defaultDevice,
     defaultFormat,
     downloadSource,
@@ -966,6 +1028,7 @@ export const useSettingsStore = defineStore('settings', () => {
     pickModelDir,
     pickOutputDir,
     pickFolder,
+    migrateRuntimeEnvDir,
     prepareModelDirChange,
     cancelModelDirChangeConfirmation,
     confirmModelDirMigration,

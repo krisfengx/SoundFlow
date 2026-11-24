@@ -28,7 +28,7 @@ def build_archive(app: Path, output: Path) -> dict:
     app = app.resolve(strict=True)
     with (app / "Contents/Info.plist").open("rb") as source:
         info = plistlib.load(source)
-    if info.get("CFBundleIdentifier") != "studio.pymss.desktop":
+    if info.get("CFBundleIdentifier") != "studio.soundflow.desktop":
         raise ValueError("Unexpected macOS application identifier")
     manifests = [
         app / "Contents/Resources" / prefix / "python/runtime-manifest.json"

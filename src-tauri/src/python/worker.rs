@@ -66,7 +66,7 @@ pub(crate) fn kill_process_tree(pid: u32) {
     let _ = Command::new("pkill").args(["-TERM", "-P", &pid.to_string()]).status();
 }
 
-const PYTHON_TERMINAL_LOG_PREFIX: &str = "__PYMSS_STUDIO_TERMINAL_LOG__";
+const PYTHON_TERMINAL_LOG_PREFIX: &str = "__SOUNDFLOW_TERMINAL_LOG__";
 static PROGRESS_LOG_TIMES: OnceLock<Mutex<HashMap<String, (Instant, u64)>>> = OnceLock::new();
 const HOST_PYTHON_ENV_VARS: &[&str] = &[
     "PYTHONHOME",
@@ -386,7 +386,7 @@ fn bootstrap_python_fallback(configured: &str, embedded: Option<&str>) -> Result
 }
 
 fn bootstrap_python_path(app: &AppHandle) -> AppResult<String> {
-    if let Ok(value) = std::env::var("PYMSS_STUDIO_PYTHON") {
+    if let Ok(value) = std::env::var("SOUNDFLOW_PYTHON") {
         let path = PathBuf::from(&value);
         if path.is_relative() {
             if let Ok(cwd) = std::env::current_dir() {
@@ -778,7 +778,7 @@ fn make_payload_file(command: &str, task_id: Option<&str>, payload: Value) -> Ap
         .unwrap_or_default();
     let sequence = PAYLOAD_FILE_COUNTER.fetch_add(1, Ordering::Relaxed);
     path.push(format!(
-        "pymss-studio-payload-{}-{}-{}-{}-{}.json",
+        "soundflow-payload-{}-{}-{}-{}-{}.json",
         command,
         task_id.unwrap_or("once"),
         std::process::id(),
@@ -791,9 +791,9 @@ fn make_payload_file(command: &str, task_id: Option<&str>, payload: Value) -> Ap
 }
 
 fn apply_plugin_source_override(cmd: &mut Command, developer_mode: bool, source: &Value) -> AppResult<()> {
-    cmd.env_remove("PYMSS_STUDIO_PLUGIN_SOURCE_OVERRIDE");
+    cmd.env_remove("SOUNDFLOW_PLUGIN_SOURCE_OVERRIDE");
     if developer_mode && !source.is_null() {
-        cmd.env("PYMSS_STUDIO_PLUGIN_SOURCE_OVERRIDE", serde_json::to_string(source)?);
+        cmd.env("SOUNDFLOW_PLUGIN_SOURCE_OVERRIDE", serde_json::to_string(source)?);
     }
     Ok(())
 }
@@ -842,18 +842,18 @@ fn build_worker_command(
         .env("PYTHONIOENCODING", "utf-8")
         .env("PYTHONDONTWRITEBYTECODE", "1")
         .env("PYTHONUTF8", "1")
-        .env("PYMSS_STUDIO_LOG_TRANSPORT", "protocol")
+        .env("SOUNDFLOW_LOG_TRANSPORT", "protocol")
         .env(
-            "PYMSS_STUDIO_DEBUG_LOG",
+            "SOUNDFLOW_DEBUG_LOG",
             if session_log::verbose_logging_enabled() {
                 "1"
             } else {
                 "0"
             },
         )
-        .env("PYMSS_STUDIO_BOOTSTRAP_PYTHON", &bootstrap_python)
+        .env("SOUNDFLOW_BOOTSTRAP_PYTHON", &bootstrap_python)
         .env(
-            "PYMSS_STUDIO_DEFAULT_OUTPUT_DIR",
+            "SOUNDFLOW_DEFAULT_OUTPUT_DIR",
             default_output_dir(app)?.to_string_lossy().to_string(),
         );
     if let Some(overlay) = active_overlay {
@@ -864,29 +864,29 @@ fn build_worker_command(
     let source = if developer_mode { storage::read_app_store(app, "plugin-source")? } else { Value::Null };
     apply_plugin_source_override(&mut cmd, developer_mode, &source)?;
     // The collector owns persistence and terminal output. Never inherit legacy file writers.
-    cmd.env_remove("PYMSS_STUDIO_AUDIO_TEMP_TOKEN")
-        .env_remove("PYMSS_STUDIO_AUDIO_TEMP_STATE")
-        .env_remove("PYMSS_STUDIO_SESSION_LOG")
-        .env_remove("PYMSS_STUDIO_PERSISTENT_LOG")
-        .env_remove("PYMSS_STUDIO_TERMINAL_LOG");
+    cmd.env_remove("SOUNDFLOW_AUDIO_TEMP_TOKEN")
+        .env_remove("SOUNDFLOW_AUDIO_TEMP_STATE")
+        .env_remove("SOUNDFLOW_SESSION_LOG")
+        .env_remove("SOUNDFLOW_PERSISTENT_LOG")
+        .env_remove("SOUNDFLOW_TERMINAL_LOG");
     if let Ok(dir) = storage::runtime_envs_dir(app) {
         cmd.env(
-            "PYMSS_STUDIO_RUNTIME_ENVS_DIR",
+            "SOUNDFLOW_RUNTIME_ENVS_DIR",
             dir.to_string_lossy().to_string(),
         );
     }
     if let Ok(file) = storage::active_runtime_file(app) {
         cmd.env(
-            "PYMSS_STUDIO_ACTIVE_RUNTIME_FILE",
+            "SOUNDFLOW_ACTIVE_RUNTIME_FILE",
             file.to_string_lossy().to_string(),
         );
     }
     if storage::is_development_executable() {
-        cmd.env("PYMSS_STUDIO_ALLOW_DEBUG_RUNTIME_OVERRIDE", "1");
+        cmd.env("SOUNDFLOW_ALLOW_DEBUG_RUNTIME_OVERRIDE", "1");
     }
     if let Some(dir) = bundled_runtime_envs_dir(app)? {
         cmd.env(
-            "PYMSS_STUDIO_BUNDLED_RUNTIME_ENVS_DIR",
+            "SOUNDFLOW_BUNDLED_RUNTIME_ENVS_DIR",
             dir.to_string_lossy().to_string(),
         );
     }
@@ -908,16 +908,31 @@ fn build_worker_command(
     #[cfg(target_os = "macos")]
     if let Some((openssl_conf, openssl_modules)) = bundled_openssl_env(app)? {
         cmd.env(
-            "PYMSS_STUDIO_OPENSSL_CONF",
+            "SOUNDFLOW_OPENSSL_CONF",
             openssl_conf.to_string_lossy().to_string(),
         );
         cmd.env(
-            "PYMSS_STUDIO_OPENSSL_MODULES",
+            "SOUNDFLOW_OPENSSL_MODULES",
             openssl_modules.to_string_lossy().to_string(),
         );
     }
     if let Ok(models_dir) = storage::models_dir(app) {
         cmd.env("PYMSS_MODEL_DIR", models_dir.to_string_lossy().to_string());
+    }
+    // Pin every cache that can contain weights to the app model root. This
+    // makes dev, installed and portable builds use the same layout even when
+    // the host environment has its own HF_HOME / TORCH_HOME / MODELSCOPE_CACHE.
+    if let Ok(data_root) = storage::data_root_dir(app) {
+        cmd.env("SOUNDFLOW_DATA_ROOT", data_root.to_string_lossy().to_string());
+        cmd.env(
+            "PYMSS_PLUGINS_DIR",
+            data_root.join("plugins").to_string_lossy().to_string(),
+        );
+    }
+    if let Ok(caches) = storage::model_cache_dirs(app) {
+        cmd.env("HF_HOME", caches[0].to_string_lossy().to_string());
+        cmd.env("TORCH_HOME", caches[1].to_string_lossy().to_string());
+        cmd.env("MODELSCOPE_CACHE", caches[2].to_string_lossy().to_string());
     }
     // Keep the custom-model registry with the app's own state rather than in pymss's default
     // ~/.cache location, so a portable install carries its imported models with it.
@@ -926,7 +941,7 @@ fn build_worker_command(
         cmd.env("PYMSS_USER_MODELS", file.to_string_lossy().to_string());
     }
     if let Ok(dir) = storage::data_root_dir(app).map(|root| root.join("debug")) {
-        cmd.env("PYMSS_STUDIO_DEBUG_DIR", dir.to_string_lossy().to_string());
+        cmd.env("SOUNDFLOW_DEBUG_DIR", dir.to_string_lossy().to_string());
     }
     if let Some(path) = payload_file {
         cmd.arg("--payload").arg(path);
@@ -975,10 +990,10 @@ fn apply_proxy_env(app: &AppHandle, cmd: &mut Command) {
         "url": proxy.url,
         "bypass": proxy.bypass,
     });
-    cmd.env("PYMSS_STUDIO_PROXY_CONFIG", config.to_string());
+    cmd.env("SOUNDFLOW_PROXY_CONFIG", config.to_string());
     match proxy.mode.as_str() {
         "none" => {
-            cmd.env("PYMSS_STUDIO_PROXY_MODE", "none")
+            cmd.env("SOUNDFLOW_PROXY_MODE", "none")
                 .env("NO_PROXY", "*")
                 .env("HTTP_PROXY", "")
                 .env("HTTPS_PROXY", "")
@@ -992,7 +1007,7 @@ fn apply_proxy_env(app: &AppHandle, cmd: &mut Command) {
                     .env("HTTPS_PROXY", &url)
                     .env("http_proxy", &url)
                     .env("https_proxy", &url)
-                    .env("PYMSS_STUDIO_PROXY_MODE", "custom");
+                    .env("SOUNDFLOW_PROXY_MODE", "custom");
             }
             let bypass = proxy.bypass.trim();
             if !bypass.is_empty() {
@@ -1000,10 +1015,10 @@ fn apply_proxy_env(app: &AppHandle, cmd: &mut Command) {
             }
         }
         "system" => {
-            cmd.env("PYMSS_STUDIO_PROXY_MODE", "system");
+            cmd.env("SOUNDFLOW_PROXY_MODE", "system");
         }
         _ => {
-            cmd.env("PYMSS_STUDIO_PROXY_MODE", "system");
+            cmd.env("SOUNDFLOW_PROXY_MODE", "system");
         }
     }
 }
@@ -2170,15 +2185,15 @@ mod tests {
     fn plugin_source_overrides_require_developer_mode_and_snapshot_the_settings() {
         let source = json!({"mode": "local", "localPath": "C:/plugins"});
         let mut command = std::process::Command::new("python");
-        command.env("PYMSS_STUDIO_PLUGIN_SOURCE_OVERRIDE", "inherited");
+        command.env("SOUNDFLOW_PLUGIN_SOURCE_OVERRIDE", "inherited");
         super::apply_plugin_source_override(&mut command, false, &source).unwrap();
-        let value = command.get_envs().find(|(key, _)| *key == "PYMSS_STUDIO_PLUGIN_SOURCE_OVERRIDE").unwrap().1;
+        let value = command.get_envs().find(|(key, _)| *key == "SOUNDFLOW_PLUGIN_SOURCE_OVERRIDE").unwrap().1;
         assert!(value.is_none());
         super::apply_plugin_source_override(&mut command, true, &source).unwrap();
-        let value = command.get_envs().find(|(key, _)| *key == "PYMSS_STUDIO_PLUGIN_SOURCE_OVERRIDE").unwrap().1.unwrap();
+        let value = command.get_envs().find(|(key, _)| *key == "SOUNDFLOW_PLUGIN_SOURCE_OVERRIDE").unwrap().1.unwrap();
         assert_eq!(serde_json::from_str::<serde_json::Value>(&value.to_string_lossy()).unwrap(), source);
         super::apply_plugin_source_override(&mut command, true, &serde_json::Value::Null).unwrap();
-        assert!(command.get_envs().find(|(key, _)| *key == "PYMSS_STUDIO_PLUGIN_SOURCE_OVERRIDE").unwrap().1.is_none());
+        assert!(command.get_envs().find(|(key, _)| *key == "SOUNDFLOW_PLUGIN_SOURCE_OVERRIDE").unwrap().1.is_none());
     }
 
     #[test]

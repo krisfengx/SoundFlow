@@ -22,9 +22,9 @@ afterEach(() => {
 })
 
 test('plugin selection preserves legacy tool settings in the shared store', async () => {
-  values.set('pymss-studio:audio-tools', JSON.stringify({ activeTool: 'asr', asrLanguage: 'zh', mergeSortBy: 'name' }))
+  values.set('soundflow:audio-tools', JSON.stringify({ activeTool: 'asr', asrLanguage: 'zh', mergeSortBy: 'name' }))
   await updatePluginToolState({ activePluginTool: 'asr/tool' })
-  assert.deepEqual(JSON.parse(values.get('pymss-studio:audio-tools') || 'null'), {
+  assert.deepEqual(JSON.parse(values.get('soundflow:audio-tools') || 'null'), {
     activeTool: 'asr', activePluginTool: 'asr/tool', asrLanguage: 'zh', mergeSortBy: 'name',
   })
 })

@@ -37,6 +37,12 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Local data root pointer (dev builds)
+soundflow-root.json
+
+# Local runtime data root (settings, logs, models, outputs, plugins, temp)
+.soundflow/
+
 # Local AI tooling state
 .claude/
 .serena/

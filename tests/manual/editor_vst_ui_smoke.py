@@ -12,7 +12,7 @@ args = parser.parse_args()
 args.output_dir.mkdir(parents=True, exist_ok=True)
 
 MOCK = """enabled => {
-  localStorage.setItem('pymss-studio:app-settings', JSON.stringify({startupOnboardingSeen:true,
+  localStorage.setItem('soundflow:app-settings', JSON.stringify({startupOnboardingSeen:true,
     beginnerGuideProgress:{status:'skipped',step:0},locale:'zh-CN',themeMode:'light'}));
   localStorage.setItem('pymss-vst-lab-search-paths',JSON.stringify(['E:/Old Development Fixtures/plugins']));
   window.__vstCalls=[]; window.__savedVstProjects=[]; window.__scanError=false; window.__scanDelay=0; window.__scanFailures=[]; window.__missingPaths=[]; window.__catalogOverride=null;
@@ -68,8 +68,8 @@ MOCK = """enabled => {
       }
       if(command==='plugin:event|listen') {listeners.set(args.handler,{event:args.event,callback:callbacks.get(args.handler)});return args.handler}
       if(command==='plugin:event|unlisten') {listeners.delete(args.eventId);return}
-      if(command==='load_app_store') {try{return JSON.parse(localStorage.getItem('pymss-studio:'+args.name))}catch{return null}}
-      if(command==='save_app_store') {localStorage.setItem('pymss-studio:'+args.name,JSON.stringify(args.data));return}
+      if(command==='load_app_store') {try{return JSON.parse(localStorage.getItem('soundflow:'+args.name))}catch{return null}}
+      if(command==='save_app_store') {localStorage.setItem('soundflow:'+args.name,JSON.stringify(args.data));return}
       if(command==='get_build_info') return {version:'0.0.12',variant:'vst-lab',updateSupported:false};
       if(command==='get_runtime_info') return {supported:false,installedEnvironments:[],coreUpdateSupported:false};
       if(command==='load_editor_project')return __savedVstProjects.filter(project=>project.id===args.projectId).at(-1);

@@ -36,17 +36,17 @@ def manifest(*, generation=1, python="3.12", torch="torch==2.7.1", common=None):
 
 def package_config():
     return {
-        "productName": "Pymss Studio", "identifier": "studio.pymss.desktop", "version": "0.0.19",
+        "productName": "SoundFlow", "identifier": "studio.soundflow.desktop", "version": "0.0.19",
         "app": {"windows": [{"width": 1280}]},
         "bundle": {"resources": ["../python/*.py"], "targets": ["app", "dmg"]},
         "plugins": {"updater": {"pubkey": "existing-public-key"}},
     }
 
 
-INSTALLER = """#define MyAppExeName "Pymss Studio.exe"
+INSTALLER = """#define MyAppExeName "SoundFlow.exe"
 [Setup]
 AppId={{6A208087-F154-4C62-8916-E3D40B7C0F24}
-DefaultDirName={autopf}\\Pymss Studio
+DefaultDirName={autopf}\\SoundFlow
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 [Files]
@@ -71,7 +71,7 @@ class RuntimeUpdateCompatibilityTests(unittest.TestCase):
 
     def test_application_identity_resources_and_update_key_remain_protected(self):
         changes = [
-            (("identifier",), "studio.pymss.other"),
+            (("identifier",), "studio.soundflow.other"),
             (("productName",), "Another Application"),
             (("bundle", "resources"), ["../python/*.py", "../new-runtime/*"]),
             (("bundle", "externalBin"), ["new-runtime"]),
@@ -96,7 +96,7 @@ class RuntimeUpdateCompatibilityTests(unittest.TestCase):
             ("{autopf}", "{localappdata}"),
             ("ArchitecturesAllowed=x64", "ArchitecturesAllowed=arm64"),
             ("ArchitecturesInstallIn64BitMode=x64", "ArchitecturesInstallIn64BitMode=arm64"),
-            ("Pymss Studio.exe", "Another Application.exe"),
+            ("SoundFlow.exe", "Another Application.exe"),
             ("Permissions: users-modify", "Permissions: users-full"),
             ('DestDir: "{app}"', 'DestDir: "{app}\\new-layout"'),
         ]

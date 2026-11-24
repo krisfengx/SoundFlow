@@ -12,7 +12,7 @@ from urllib.parse import quote, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 
-DEFAULT_REPOSITORY = "fengjay01/SoundFlow"
+DEFAULT_REPOSITORY = "krisfengx/SoundFlow"
 GITHUB_ASSET_LIMIT = 2 * 1024**3
 PACKAGE_TYPES = (
     ("windows-x64-cuda", "Windows x64", "NVIDIA CUDA", (("-setup.exe", "安装版 / Installer"), (".7z", "便携版 / Portable"))),

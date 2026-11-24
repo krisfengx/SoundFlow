@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  A standalone desktop project built on <a href="https://github.com/pymss-project/pymss-studio">Pymss Studio</a>, extended with a complete lyrics pipeline.
+  A standalone desktop project built on <a href="https://github.com/pymss-project/pymss-studio">the upstream desktop project</a>, extended with a complete lyrics pipeline.
 </p>
 
 <p align="center">
@@ -23,9 +23,9 @@
 <p align="center">
   <a href="./README.zh-CN.md">简体中文</a>
   ·
-  <a href="https://github.com/fengjay01/SoundFlow">GitHub</a>
+  <a href="https://github.com/krisfengx/SoundFlow">GitHub</a>
   ·
-  <a href="https://github.com/fengjay01/SoundFlow/issues">Issues</a>
+  <a href="https://github.com/krisfengx/SoundFlow/issues">Issues</a>
   ·
   <a href="https://github.com/pymss-project/pymss-studio/releases">Upstream releases</a>
   ·
@@ -45,12 +45,12 @@
 
 ## About
 
-SoundFlow is a standalone desktop project built on [Pymss Studio](https://github.com/pymss-project/pymss-studio) around one addition: an **end-to-end lyric timeline workspace**. The upstream desktop app (Tauri + Vue + Python Worker around the [pymss](https://github.com/pymss-project/pymss) separation engine) stays intact — model library, separation jobs, workflows, stem editor, audio tools and plugin marketplace — and a new **Lyrics** page takes an audio file plus LRC / plain text / ASR transcription through forced alignment, word-level editing and multi-format export (LRC, TTML, SRT, KRC, ASS, JSON, standalone HTML players).
+SoundFlow is a standalone desktop project built on [the upstream desktop project](https://github.com/pymss-project/pymss-studio) around one addition: an **end-to-end lyric timeline workspace**. The upstream desktop app (Tauri + Vue + Python Worker around the [pymss](https://github.com/pymss-project/pymss) separation engine) stays intact — model library, separation jobs, workflows, stem editor, audio tools and plugin marketplace — and a new **Lyrics** page takes an audio file plus LRC / plain text / ASR transcription through forced alignment, word-level editing and multi-format export (LRC, TTML, SRT, KRC, ASS, JSON, standalone HTML players).
 
 Separation and alignment run locally. Preparing runtimes, models, or optional components requires a network connection; downloaded models can then process local audio.
 
 > [!NOTE]
-> This is **not an official upstream release**. Since v0.1.0, prebuilt desktop packages are published on the [GitHub Releases page](https://github.com/fengjay01/SoundFlow/releases); you can still run from source (see [Developer quick start](#developer-quick-start)). Legacy identifiers are kept on purpose for upgrade compatibility: the `PYMSS_STUDIO_*` environment variables, the `pymss-studio:` settings prefix, the Tauri identifier, and the `pymss` / `pymss-core` package names.
+> This is **not an official upstream release**. Since v0.1.0, prebuilt desktop packages are published on the [GitHub Releases page](https://github.com/krisfengx/SoundFlow/releases); you can still run from source (see [Developer quick start](#developer-quick-start)). All application identifiers are SoundFlow: environment variables, settings prefix, Tauri identifier, executable name, and data directory. Only the upstream core package names `pymss` / `pymss-core` are retained.
 
 [Developer quick start](#developer-quick-start) · [Features](#features) · [Lyrics workspace](#lyrics-workspace) · [Getting the app](#getting-the-app) · [Quick start](#quick-start) · [Preview](#preview) · [Troubleshooting](#troubleshooting) · [Development](#development-and-verification)
 
@@ -98,7 +98,7 @@ sudo apt-get install -y python3.12 python3.12-venv  # Python 3.12 (Ubuntu 22.04 
 ### 2. Clone, launch and verify
 
 ```bash
-git clone https://github.com/fengjay01/SoundFlow.git && cd SoundFlow
+git clone https://github.com/krisfengx/SoundFlow.git && cd SoundFlow
 corepack pnpm dev:setup:desktop   # install deps + create .venv/bootstrap (Python 3.12 + requests[socks]) + check
 corepack pnpm dev:desktop         # Tauri window + frontend hot reload + Rust / Python worker
 corepack pnpm test:all            # all three test layers in one run
@@ -137,13 +137,13 @@ Double-click the root [`dev-local.bat`](./dev-local.bat) (equivalent to `pnpm de
 | Audio tools | Format conversion, audio inspection, SDR / SI-SDR, ASR, vocal-to-MIDI conversion, silence slicing, and audio merging. |
 | Runtimes and settings | Manage platform-appropriate CPU, CUDA, ROCm, and MLX environments; configure download sources, proxies, concurrency, paths, language, zoom, and themes. |
 
-The first two rows are SoundFlow additions; the remaining capabilities are inherited from upstream Pymss Studio.
+The first two rows are SoundFlow additions; the remaining capabilities are inherited from upstream SoundFlow.
 
 Available stems, parameters, and devices vary by model and runtime. Acceleration depends on the model, hardware, drivers, and task configuration.
 
 ## Lyrics workspace
 
-Open **Lyrics** in the sidebar. It has three tabs: **Workbench**, **Editor**, and **Model manager**. This is the main addition in SoundFlow; everything else in the app is inherited from upstream Pymss Studio.
+Open **Lyrics** in the sidebar. It has three tabs: **Workbench**, **Editor**, and **Model manager**. This is the main addition in SoundFlow; everything else in the app is inherited from upstream SoundFlow.
 
 ### Pipeline
 
@@ -191,9 +191,9 @@ The alignment and export chain follows the approach of [6hdj/lrc-ttml](https://g
 
 ## Getting the app
 
-Prebuilt desktop packages are published on the [GitHub Releases page](https://github.com/fengjay01/SoundFlow/releases) starting with v0.1.0. Pick the asset for your platform, read the release notes, and check **Assets**. You can always clone and run from source as described in [Developer quick start](#developer-quick-start).
+Prebuilt desktop packages are published on the [GitHub Releases page](https://github.com/krisfengx/SoundFlow/releases) starting with v0.1.0. Pick the asset for your platform, read the release notes, and check **Assets**. You can always clone and run from source as described in [Developer quick start](#developer-quick-start).
 
-The release pipeline follows the upstream Pymss Studio packaging model: GitHub Actions builds a platform matrix from a single `workflow_dispatch`, producing installers and portable archives for Windows, a DMG for Apple Silicon macOS, and an AppImage for Linux x64. Each Windows package bundles its inference runtime; older package identifiers are retained for upgrade compatibility.
+The release pipeline follows the upstream packaging model: GitHub Actions builds a platform matrix from a single `workflow_dispatch`, producing installers and portable archives for Windows, a DMG for Apple Silicon macOS, and an AppImage for Linux x64. Each Windows package bundles its inference runtime.
 
 > [!NOTE]
 > Release packages are built by the same workflow for all platforms. Read the relevant release notes and back up important projects and settings before upgrading. If GitHub is inaccessible, check the release notes for mirrors.
@@ -243,7 +243,7 @@ For a repeatable processing chain, open or create a workflow under **Workflows**
 
 ## Preview
 
-The first two rows show the SoundFlow **Lyrics** workspace; the rest come from the inherited upstream UI and still show the old **Pymss Studio** name. Both languages and light/dark themes are shown at 1920 × 1080; click an image to view it at full size.
+The first two rows show the SoundFlow **Lyrics** workspace; the rest show the inherited upstream UI. Both languages and light/dark themes are shown at 1920 × 1080; click an image to view it at full size.
 
 | Feature | Light theme | Dark theme |
 | --- | --- | --- |
@@ -315,20 +315,22 @@ Settings, models, outputs, projects, logs, and temporary files share a data root
 
 | Distribution | Default data root |
 | --- | --- |
-| `PYMSS_STUDIO_DATA_ROOT` is set | The supplied path takes priority. |
-| Development binary run directly from Cargo `target/debug` or `target/release` | `data/` in the project root. |
-| Windows portable package with a `pymss-studio.portable` marker beside the executable | `data/` beside the executable. |
-| Regular installed / other release packages | `.pymss-studio/` in the user directory, such as `%USERPROFILE%\.pymss-studio` on Windows. |
+| `SOUNDFLOW_DATA_ROOT` is set | The supplied path takes priority. |
+| Development binary run directly from Cargo `target/debug` or `target/release` | `.soundflow/` in the project root. |
+| Windows portable package with a `soundflow.portable` marker beside the executable | `.soundflow/` beside the executable. |
+| Regular installed / other release packages | `.soundflow/` beside the installed executable. |
 
-The root defaults to `settings/`, `models/`, `outputs/`, `editor-projects/`, `logs/`, and `temp/`. On macOS and Linux, writable runtime state is stored in `runtime-envs/` under this root: `active-runtime.json` selects the current core, `.overlays/` contains core updates and their dependencies, and `optional-packages/` contains separately installed components, and `pymss-runtime-state.json` records each backend's `lyricsReady` flag. On Windows, these paths remain under the selected runtime root's `runtime-envs/`, generally in `python-runtime/runtime-envs/` beside the installation resources. The macOS base Python environment stays inside the application bundle.
+Older roots (`data/` beside a development/portable binary and `%USERPROFILE%\.soundflow` for packaged installs) are adopted automatically when present, so upgrading preserves settings, models, and results. The `SOUNDFLOW_*` variable names, `soundflow:` settings prefix, and portable marker remain legacy identifiers kept for upgrade compatibility. The root can be changed from **Settings → Data Directory**; a pointer file outside the root stores the choice and the change applies on next launch.
 
-**Lyrics models live in a separate tree.** SoundFlow stores them under `models/_tool_models/lyrics/models/{asr,alignment,diarization,separation}/` in the data root, independent of the separation `models/` directory; manage them in **Lyrics → Model manager**. The `PYMSS_STUDIO_*` variable names and the `pymss-studio:` settings prefix are legacy identifiers kept for upgrade compatibility.
+The root defaults to `settings/`, `models/`, `outputs/`, `editor-projects/`, `logs/`, and `temp/`. On macOS and Linux, writable runtime state is stored in `runtime-envs/` under this root: `active-runtime.json` selects the current core, `.overlays/` contains core updates and their dependencies, and `optional-packages/` contains separately installed components, and `pymss-runtime-state.json` records each backend's `lyricsReady` flag. On Windows, managed environments default to `.venv/python/runtime-envs/` beside the installed executable; existing `python-runtime/runtime-envs/` or data-root layouts are adopted. The macOS base Python environment stays inside the application bundle.
+
+**Lyrics models live in a separate tree.** SoundFlow stores them under `models/_tool_models/lyrics/models/{asr,alignment,diarization,separation}/` in the data root, independent of the separation `models/` directory; manage them in **Lyrics → Model manager**. The `SOUNDFLOW_*` variable names and the `soundflow:` settings prefix are legacy identifiers kept for upgrade compatibility.
 
 **Editor projects reference audio files by path.** Back up the associated audio as well as the project. Relink missing assets in the editor after moving or deleting original outputs. Use the application's migration workflow when changing the model directory.
 
 ### Updates and environment management
 
-Open **Settings → About** for version and update information. Windows and macOS builds whose release channel supports in-app updates can check and install updates there. Use the release page for builds without automatic update support. On macOS, an application update replaces the entire `.app`, preserving user data; administrator authorization is requested if write permissions are insufficient. Move the app to `/Applications` before updating: updates are blocked from a read-only DMG or App Translocation location. A change to the fixed base runtime contract requires a manual installation. The **Related links** section is grouped by source: this project (SoundFlow repository and issue tracker), the upstream project (Pymss Studio desktop and pymss core repositories), and the desktop/core AGPL-3.0 licenses.
+Open **Settings → About** for version and update information. Windows and macOS builds whose release channel supports in-app updates can check and install updates there. Use the release page for builds without automatic update support. On macOS, an application update replaces the entire `.app`, preserving user data; administrator authorization is requested if write permissions are insufficient. Move the app to `/Applications` before updating: updates are blocked from a read-only DMG or App Translocation location. A change to the fixed base runtime contract requires a manual installation. The **Related links** section is grouped by source: this project (SoundFlow repository and issue tracker), the upstream project (upstream desktop app and pymss core repositories), and the desktop/core AGPL-3.0 licenses.
 
 Use **Settings → Runtime** to update `pymss`, `pymss-core`, and their compatible dependencies independently of the desktop application. Review the prepared version and dependency plan before confirming. Packages are installed into a new core overlay and activated only after validation; a compatible previous core can be restored when available. Updates that require replacing fixed accelerator components are rejected, preserving the active runtime. Dependency combinations are defined in [`python/runtime-manifest.json`](./python/runtime-manifest.json).
 
@@ -336,7 +338,7 @@ Use **Settings → Runtime** to update `pymss`, `pymss-core`, and their compatib
 
 Optional components such as FunASR use their own directories, separate from core overlays. Installation checks compatibility with the current PyTorch version and accelerator backend. On Windows and Linux, uninstalling FunASR removes its separate component directory and any copy installed directly in the active environment; downloaded models are kept. On macOS, component operations preserve packages in the bundled base runtime; the ASR tool remains unavailable. Pip and Numba caches are stored under the data root's `temp/` directory (in dev builds, `dev-env.mjs` pins pip to `.venv/cache/pip` instead).
 
-On macOS, deleting `SoundFlow.app` (or the upstream `Pymss Studio.app`) removes the application and bundled runtime while retaining the user data root, including settings, models, outputs, and core overlays. Removing and reinstalling the app therefore reuses retained data. Custom model/output directories and `.pymss-studio-previous-*.app` update backups beside the application must be managed separately.
+On macOS, deleting `SoundFlow.app` (or an older installed copy) removes the application and bundled runtime while retaining the user data root, including settings, models, outputs, and core overlays. Removing and reinstalling the app therefore reuses retained data. Custom model/output directories and `.soundflow-previous-*.app` update backups beside the application must be managed separately.
 
 ## Troubleshooting
 
@@ -363,15 +365,15 @@ The report distinguishes observations from this process and saved snapshots, inc
 
 Automatic error reports coalesce errors within a five-second interval and write the latest error and traceback afterward. Pending errors are flushed before normal application exit. Clearing logs cancels older pending reports.
 
-If no window appears at startup, exit any existing SoundFlow process, open CMD in the installation or build directory, and enable verbose logging before the interface loads (for a source build, run `pnpm dev:desktop` and read its terminal output). The command below uses the upstream package name `Pymss Studio.exe`; a locally built binary is `SoundFlow.exe`:
+If no window appears at startup, exit any existing SoundFlow process, open CMD in the installation or build directory, and enable verbose logging before the interface loads (for a source build, run `pnpm dev:desktop` and read its terminal output). The command below uses `SoundFlow.exe`:
 
 ```cmd
-start "" /b /wait "Pymss Studio.exe" --debug
+start "" /b /wait "SoundFlow.exe" --debug
 ```
 
-To save console output, run `start "" /b /wait "Pymss Studio.exe" --debug > "%TEMP%\pymss-startup.log" 2>&1`. The flag enables verbose SoundFlow and Worker logs for this process without changing the saved developer mode setting. A subsequent launch without the flag uses the original logging level. Exit an existing process before relaunching with the flag. On macOS and Linux, pass `--debug` directly to the application executable.
+To save console output, run `start "" /b /wait "SoundFlow.exe" --debug > "%TEMP%\soundflow-startup.log" 2>&1`. The flag enables verbose SoundFlow and Worker logs for this process without changing the saved developer mode setting. A subsequent launch without the flag uses the original logging level. Exit an existing process before relaunching with the flag. On macOS and Linux, pass `--debug` directly to the application executable.
 
-For unresolved issues, include application version and package type, OS version, GPU model, separation model, reproduction steps, and relevant log excerpts in [GitHub Issues](https://github.com/fengjay01/SoundFlow/issues). Remove personal paths, proxy credentials, and other sensitive information from logs before sharing.
+For unresolved issues, include application version and package type, OS version, GPU model, separation model, reproduction steps, and relevant log excerpts in [GitHub Issues](https://github.com/krisfengx/SoundFlow/issues). Remove personal paths, proxy credentials, and other sensitive information from logs before sharing.
 
 ## Development and verification
 
@@ -379,7 +381,7 @@ For unresolved issues, include application version and package type, OS version,
 
 Commands are in [Developer quick start](#developer-quick-start) above. The toolchain contract lives in [`setup/toolchain.json`](./setup/toolchain.json) (Node 22 / pnpm 10.33.2 / Python 3.12 / Rust stable); `package.json` (`engines` / `packageManager`) and `.nvmrc` align with it, and `pnpm test:all` runs the three test layers with those versions. The full path and cache contract is documented in [`setup/README.md`](./setup/README.md).
 
-There are only two real platform differences: the commands that install Tauri's system packages, and the venv interpreter path (`.venv/bootstrap/Scripts/python.exe` vs `.venv/bootstrap/bin/python`), handled by `dev-env.mjs` via `process.platform`. `pnpm dev:desktop` pins environment caches (pip / cargo / npm / pnpm / XDG / temp) inside `.venv/`, while caches that can hold model weights (HF / torch.hub / ModelScope) go to `data/models/_cache/` — all inside the checkout, so **nothing is written to the system drive**; override the interpreter with `PYMSS_STUDIO_PYTHON`. The CN network policy is opt-in: only `SOUNDFLOW_CN_NETWORK=1` enables mirrors; the default never touches a developer's proxy settings.
+There are only two real platform differences: the commands that install Tauri's system packages, and the venv interpreter path (`.venv/bootstrap/Scripts/python.exe` vs `.venv/bootstrap/bin/python`), handled by `dev-env.mjs` via `process.platform`. `pnpm dev:desktop` pins environment caches (pip / cargo / npm / pnpm / XDG / temp) inside `.venv/`, while caches that can hold model weights (HF / torch.hub / ModelScope) go to `data/models/_cache/` — all inside the checkout, so **nothing is written to the system drive**; override the interpreter with `SOUNDFLOW_PYTHON`. The CN network policy is opt-in: only `SOUNDFLOW_CN_NETWORK=1` enables mirrors; the default never touches a developer's proxy settings.
 
 **Path contract.** Every default location is derived from code position — `__file__` in [`python/_project_paths.py`](./python/_project_paths.py), `CARGO_MANIFEST_DIR` in Rust, `import.meta.url` in Node — never from the user's home directory; environment variables only override it. The single layering rule is "can model weights appear here?": yes → `data/models/_cache/`, no → `.venv/`. Debug scripts and artifacts go to `_debug_output/` inside the repo root via `debug_out()` from [`scripts/debug_paths.py`](./scripts/debug_paths.py) and are excluded from commits. Run `pnpm env:paths` to review every pinned path; both `pnpm env:paths` and `pnpm env:doctor` assert `paths-local`, so a stray path fails the check.
 
@@ -432,13 +434,13 @@ pnpm worker -- env_info
 pnpm worker -- list_models --payload '{}'
 ```
 
-`pnpm worker` uses the interpreter resolved by `dev-env.mjs` (`PYMSS_STUDIO_PYTHON` → `.venv/bootstrap` → legacy Windows layout → system Python), identically on all three OSes; `node scripts/dev-env.mjs python -- <args>` works too. Use the bundled or active environment's Python path when verifying a release package.
+`pnpm worker` uses the interpreter resolved by `dev-env.mjs` (`SOUNDFLOW_PYTHON` → `.venv/bootstrap` → legacy Windows layout → system Python), identically on all three OSes; `node scripts/dev-env.mjs python -- <args>` works too. Use the bundled or active environment's Python path when verifying a release package.
 
 | Variable | Purpose |
 | --- | --- |
-| `PYMSS_STUDIO_DATA_ROOT` | Override the application data root. |
-| `PYMSS_STUDIO_PYTHON` | Override bootstrap Python. Without an override, `dev-env.mjs` probes `.venv/bootstrap`, the legacy Windows layout, then system `python3.12` / `python3` / `python` (`py` on Windows). Inference may still use an activated environment. |
-| `PYMSS_STUDIO_DEFAULT_OUTPUT_DIR` | Worker output fallback when none is specified; the desktop application passes its configured output directory to the Worker. |
+| `SOUNDFLOW_DATA_ROOT` | Override the application data root. |
+| `SOUNDFLOW_PYTHON` | Override bootstrap Python. Without an override, `dev-env.mjs` probes `.venv/bootstrap`, the legacy Windows layout, then system `python3.12` / `python3` / `python` (`py` on Windows). Inference may still use an activated environment. |
+| `SOUNDFLOW_DEFAULT_OUTPUT_DIR` | Worker output fallback when none is specified; the desktop application passes its configured output directory to the Worker. |
 
 </details>
 
@@ -498,14 +500,14 @@ These are alternative runtime preparation examples; select one rather than runni
 
 - Finish wiring the STARS aligner, stabilise the optional TIFA adapter, and broaden multilingual forced alignment.
 - Add Lyrics-page screenshots, packaged builds, and an in-app import → align → edit → re-export round trip.
-- The upstream roadmap (Intel / AMD compatibility, runtime validation, mobile GPU/NPU research) continues in [Pymss Studio](https://github.com/pymss-project/pymss-studio); SoundFlow ships no mobile build.
+- The upstream roadmap (Intel / AMD compatibility, runtime validation, mobile GPU/NPU research) continues in [the upstream desktop project](https://github.com/pymss-project/pymss-studio); SoundFlow ships no mobile build.
 
 ## Community and contributing
 
-Use [GitHub Issues](https://github.com/fengjay01/SoundFlow/issues) for SoundFlow-specific problems (lyrics pipeline, local launcher, docs). For issues in the inherited separation/runtime features, check the [upstream issues](https://github.com/pymss-project/pymss-studio/issues) first; the [upstream discussions](https://github.com/pymss-project/pymss-studio/discussions) and the Chinese [upstream community group](https://qm.qq.com/q/YLLou4NucE) cover general usage.
+Use [GitHub Issues](https://github.com/krisfengx/SoundFlow/issues) for SoundFlow-specific problems (lyrics pipeline, local launcher, docs). For issues in the inherited separation/runtime features, check the [upstream issues](https://github.com/pymss-project/pymss-studio/issues) first; the [upstream discussions](https://github.com/pymss-project/pymss-studio/discussions) and the Chinese [upstream community group](https://qm.qq.com/q/YLLou4NucE) cover general usage.
 
 SoundFlow currently focuses on issues, reproduction reports and documentation fixes rather than a steady stream of external pull requests; see the Issues link above for how to contribute.
 
 ## License
 
-SoundFlow is derived from Pymss Studio and keeps the GNU Affero General Public License v3.0. See [LICENSE](./LICENSE). The lyrics pipeline documents mappings derived from [6hdj/lrc-ttml](https://github.com/6hdj/lrc-ttml) (MIT); dependencies, model weights and third-party tools retain their own licenses and usage terms (TIFA's model is CC BY-NC-SA and Meta's MMS-FA weights are CC BY-NC 4.0, both non-commercial).
+SoundFlow is derived from the upstream desktop project and keeps the GNU Affero General Public License v3.0. See [LICENSE](./LICENSE). The lyrics pipeline documents mappings derived from [6hdj/lrc-ttml](https://github.com/6hdj/lrc-ttml) (MIT); dependencies, model weights and third-party tools retain their own licenses and usage terms (TIFA's model is CC BY-NC-SA and Meta's MMS-FA weights are CC BY-NC 4.0, both non-commercial).

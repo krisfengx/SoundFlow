@@ -173,13 +173,13 @@ def isolated_environment(package: Path, output: Path, bootstrap: Path, runtime: 
                    and key.lower() not in {"http_proxy", "https_proxy", "all_proxy", "no_proxy"}}
     data = output / "data"
     paths = {
-        "PYMSS_STUDIO_DATA_ROOT": data,
-        "PYMSS_STUDIO_RUNTIME_ENVS_DIR": data / "runtime-envs",
-        "PYMSS_STUDIO_ACTIVE_RUNTIME_FILE": data / "runtime-envs/active-runtime.json",
-        "PYMSS_STUDIO_BUNDLED_RUNTIME_ENVS_DIR": runtime.parent,
-        "PYMSS_STUDIO_BOOTSTRAP_PYTHON": bootstrap,
-        "PYMSS_STUDIO_DEFAULT_OUTPUT_DIR": data / "outputs",
-        "PYMSS_STUDIO_DEBUG_DIR": data / "debug",
+        "SOUNDFLOW_DATA_ROOT": data,
+        "SOUNDFLOW_RUNTIME_ENVS_DIR": data / "runtime-envs",
+        "SOUNDFLOW_ACTIVE_RUNTIME_FILE": data / "runtime-envs/active-runtime.json",
+        "SOUNDFLOW_BUNDLED_RUNTIME_ENVS_DIR": runtime.parent,
+        "SOUNDFLOW_BOOTSTRAP_PYTHON": bootstrap,
+        "SOUNDFLOW_DEFAULT_OUTPUT_DIR": data / "outputs",
+        "SOUNDFLOW_DEBUG_DIR": data / "debug",
         "PYMSS_USER_MODELS": data / "user-models.json",
         "PYMSS_MODEL_DIR": data / "models",
         "NUMBA_CACHE_DIR": data / "numba-cache",
@@ -198,7 +198,7 @@ def isolated_environment(package: Path, output: Path, bootstrap: Path, runtime: 
     for key, path in paths.items():
         environment[key] = str(path)
         if path.is_relative_to(output):
-            directory = path.parent if key in {"PYMSS_STUDIO_ACTIVE_RUNTIME_FILE", "PYMSS_USER_MODELS"} else path
+            directory = path.parent if key in {"SOUNDFLOW_ACTIVE_RUNTIME_FILE", "PYMSS_USER_MODELS"} else path
             directory.mkdir(parents=True, exist_ok=True)
     native = []
     for field in ("nativeToolDirs", "nativeLibraryDirs"):

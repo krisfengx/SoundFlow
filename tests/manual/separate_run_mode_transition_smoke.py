@@ -71,11 +71,11 @@ with sync_playwright() as playwright:
     page.add_init_script(
         f"""(() => {{
           localStorage.setItem(
-            'pymss-studio:app-settings',
+            'soundflow:app-settings',
             JSON.stringify({{ startupOnboardingSeen: true, locale: 'en' }}),
           )
-          localStorage.setItem('pymss-studio:model-state', JSON.stringify({json.dumps(model_state)}))
-          localStorage.setItem('pymss-studio:workflow-state', JSON.stringify({json.dumps(workflow_state)}))
+          localStorage.setItem('soundflow:model-state', JSON.stringify({json.dumps(model_state)}))
+          localStorage.setItem('soundflow:workflow-state', JSON.stringify({json.dumps(workflow_state)}))
         }})()"""
     )
     page.goto("http://localhost:1420/#/")

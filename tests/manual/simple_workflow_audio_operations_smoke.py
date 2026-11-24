@@ -106,10 +106,10 @@ def main():
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
             page.add_init_script(f"""(() => {{
-              if (localStorage.getItem('pymss-studio:workflow-state')) return;
-              localStorage.setItem('pymss-studio:app-settings', JSON.stringify({{startupOnboardingSeen: true, locale: 'en'}}));
-              localStorage.setItem('pymss-studio:workflow-state', JSON.stringify({json.dumps(workflow_state)}));
-              localStorage.setItem('pymss-studio:model-state', JSON.stringify({json.dumps(model_state)}));
+              if (localStorage.getItem('soundflow:workflow-state')) return;
+              localStorage.setItem('soundflow:app-settings', JSON.stringify({{startupOnboardingSeen: true, locale: 'en'}}));
+              localStorage.setItem('soundflow:workflow-state', JSON.stringify({json.dumps(workflow_state)}));
+              localStorage.setItem('soundflow:model-state', JSON.stringify({json.dumps(model_state)}));
             }})()""")
             page.goto("http://localhost:1420/#/workflow-simple-editor?workflowId=issue74")
             page.wait_for_load_state("networkidle")
@@ -159,7 +159,7 @@ def main():
 
             page.get_by_role("button", name="Save", exact=True).click()
             expect(page.locator(".n-message__content", has_text="Workflow saved")).to_be_visible()
-            saved = page.evaluate("JSON.parse(localStorage.getItem('pymss-studio:workflow-state')).workflows.find(item => item.id === 'issue74').definition")
+            saved = page.evaluate("JSON.parse(localStorage.getItem('soundflow:workflow-state')).workflows.find(item => item.id === 'issue74').definition")
             assert [node["algorithm"] for node in saved["ensembles"]] == ["sum", "subtract", "invert", "avg_wave"]
             assert [item["source"] for item in saved["ensembles"][0]["inputs"]] == [f"sw.{stem}" for stem in stems[1:]]
             page.reload()

@@ -156,7 +156,7 @@ mod platform {
             direct,
             proxy,
         )
-        .user_agent("Pymss-Studio-Updater")
+        .user_agent("SoundFlow-Updater")
         .build()
         .map_err(|e| failure(e.without_url().to_string()))?;
         let mut response = client
@@ -243,7 +243,7 @@ mod platform {
         command
             .args(["--pymss-update-startup", &request.token])
             .current_dir(target.parent().unwrap())
-            .env("PYMSS_STUDIO_DATA_ROOT", data_root)
+            .env("SOUNDFLOW_DATA_ROOT", data_root)
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(fs::OpenOptions::new().append(true).create(true).open(log)?)
@@ -319,7 +319,7 @@ mod platform {
         check_location(&target)?;
         let original = identity(&target)?;
         let stage = tempfile::Builder::new()
-            .prefix(".pymss-studio-update-")
+            .prefix(".soundflow-update-")
             .tempdir_in(target.parent().unwrap())?;
         let image = stage.path().join("update.AppImage");
         let candidates = update_manager::download_candidates(

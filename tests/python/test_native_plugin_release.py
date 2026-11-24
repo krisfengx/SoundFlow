@@ -34,7 +34,7 @@ PLUGIN_PERMISSIONS = {
 FAKE_HELPER = r"""import json,os,sys,time
 mode=os.environ.get('PROBE_BEHAVIOR','')
 with open(os.environ['PROBE_TRACE'],'a',encoding='utf-8') as out:
- out.write(json.dumps({'args':sys.argv[1:],'data':os.environ['PYMSS_STUDIO_DATA_ROOT']})+'\n')
+ out.write(json.dumps({'args':sys.argv[1:],'data':os.environ['SOUNDFLOW_DATA_ROOT']})+'\n')
 if sys.argv[1]=='--plugin-host-capabilities':
  result={'enabled':mode!='disabled','labBuild':mode=='lab','platform':os.environ.get('PROBE_PLATFORM','windows'),'formats':['vst2','vst3'],'experimental':True}
  if result['platform']=='macos':result['formats'].append('au')
@@ -130,7 +130,7 @@ class NativePluginReleaseTests(unittest.TestCase):
             plistlib.dump(
                 {
                     "CFBundleExecutable": "SoundFlow",
-                    "CFBundleIdentifier": "studio.pymss.desktop",
+                    "CFBundleIdentifier": "studio.soundflow.desktop",
                 },
                 out,
             )
@@ -188,7 +188,7 @@ class NativePluginReleaseTests(unittest.TestCase):
             plistlib.dump(
                 {
                     "CFBundleExecutable": "SoundFlow",
-                    "CFBundleIdentifier": "studio.pymss.desktop.vstlab",
+                    "CFBundleIdentifier": "studio.soundflow.desktop.vstlab",
                 },
                 out,
             )
@@ -201,7 +201,7 @@ class NativePluginReleaseTests(unittest.TestCase):
             plistlib.dump(
                 {
                     "CFBundleExecutable": "../outside",
-                    "CFBundleIdentifier": "studio.pymss.desktop",
+                    "CFBundleIdentifier": "studio.soundflow.desktop",
                 },
                 out,
             )
@@ -334,7 +334,7 @@ class NativePluginBuildEntryTests(unittest.TestCase):
         self.assertNotIn("identifier", overlay)
         self.assertNotIn("productName", overlay)
         self.assertNotIn("build", overlay)
-        self.assertEqual(base["identifier"], "studio.pymss.desktop")
+        self.assertEqual(base["identifier"], "studio.soundflow.desktop")
         macos = overlay["bundle"]["macOS"]
         self.assertTrue(macos["hardenedRuntime"])
         with (ROOT / "src-tauri" / macos["entitlements"]).open("rb") as source:

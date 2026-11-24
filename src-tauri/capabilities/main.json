@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main-capability",
-  "description": "Main window permissions for Pymss Studio",
+  "description": "Main window permissions for SoundFlow",
   "windows": ["main", "editor-*", "workflow-node-editor-*", "workflow-simple-editor-*"],
   "permissions": [
     "core:default",

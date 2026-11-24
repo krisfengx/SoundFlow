@@ -161,8 +161,8 @@ class Aria2FallbackTest(unittest.TestCase):
 
         with mock.patch("worker_download.emit"), \
              mock.patch.dict(os.environ, {
-                 "PYMSS_STUDIO_OPENSSL_CONF": "/app/bin/openssl/openssl.cnf",
-                 "PYMSS_STUDIO_OPENSSL_MODULES": "/app/bin/openssl/ossl-modules",
+                 "SOUNDFLOW_OPENSSL_CONF": "/app/bin/openssl/openssl.cnf",
+                 "SOUNDFLOW_OPENSSL_MODULES": "/app/bin/openssl/ossl-modules",
              }, clear=True):
             result = download_studio_model(module, "model", [("model.th", root / "model.th")], task_id="task")
 

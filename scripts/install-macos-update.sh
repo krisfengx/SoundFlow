@@ -17,8 +17,8 @@ case "$caller_uid:$parent_pid" in *[!0-9:]*|:*|*:) exit 1 ;; esac
 case "$expected_digest" in *[!0-9a-f]*) exit 1 ;; esac
 parent=$(dirname "$target")
 identity=$(printf '%s' "$target" | /usr/bin/shasum -a 256 | /usr/bin/awk '{print $1}')
-legacy="$parent/.pymss-studio-previous-$identity.app"
-control="/private/tmp/pymss-studio-authorized-$token"
+legacy="$parent/.soundflow-previous-$identity.app"
+control="/private/tmp/soundflow-authorized-$token"
 umask 077
 # The root-owned directory in sticky /private/tmp cannot be replaced by the caller.
 /bin/mkdir -m 755 "$control"
@@ -69,7 +69,7 @@ rollback() {
 }
 
 cleanup_legacy_stages() {
-    for candidate in "$parent"/.pymss-studio-update-*; do
+    for candidate in "$parent"/.soundflow-update-*; do
         [ "$candidate" != "$stage" ] || continue
         [ -d "$candidate" ] && [ ! -L "$candidate" ] || continue
         # A marker protects live updaters, not directories from ended or
@@ -153,7 +153,7 @@ if [ -e "$legacy" ] || [ -L "$legacy" ]; then
     validate_bundle "$legacy"
     /bin/rm -rf "$legacy"
 fi
-stage=$(/usr/bin/mktemp -d "$parent/.pymss-studio-update-XXXXXXXX")
+stage=$(/usr/bin/mktemp -d "$parent/.soundflow-update-XXXXXXXX")
 printf '%s' "$$" > "$stage/.pymss-update-active"
 staged="$stage/SoundFlow.app"
 /usr/bin/ditto "$source" "$staged"

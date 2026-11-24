@@ -191,8 +191,8 @@ function showManualUpdatePrompt() {
 
 async function openManualUpdate(repair = false) {
   const url = repair
-    ? `https://github.com/pymss-project/pymss-studio/releases/tag/v${encodeURIComponent(app.buildInfoVersion)}`
-    : updates.manualInstallUrl || 'https://github.com/pymss-project/pymss-studio/releases/latest'
+    ? `https://github.com/krisfengx/SoundFlow/releases/tag/v${encodeURIComponent(app.buildInfoVersion)}`
+    : updates.manualInstallUrl || 'https://github.com/krisfengx/SoundFlow/releases/latest'
   manualUpdateError.value = ''
   try {
     await open(url)

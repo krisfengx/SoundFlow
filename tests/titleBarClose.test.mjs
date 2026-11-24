@@ -14,28 +14,36 @@ const code = ts.transpileModule(source.statements.filter(item => !ts.isImportDec
 }).outputText
 const flush = async () => { for (let i = 0; i < 8; i++) await new Promise(resolve => setImmediate(resolve)) }
 
-function environment() {
+function environment({ label = 'editor', closeBehavior = 'ask' } = {}) {
   const calls = [], prompts = [], errors = []
+  const settings = { isModelDirMigrating: false, closeBehavior }
   const context = vm.createContext({
-    computed, h, ref, NButton: { name: 'Button' }, runWindowCloseGuards,
+    computed, h, ref, runWindowCloseGuards,
+    NButton: { name: 'Button' }, NCheckbox: { name: 'Checkbox' },
     createLogger: () => ({ warn() {} }), useRoute: () => ({ name: 'editor' }),
     useI18n: () => ({ t: key => key }),
     useDialog: () => ({ warning(options) { prompts.push(options); return { destroy() { options.onClose?.() } } } }),
     useMessage: () => ({ error: text => errors.push(text), warning() {}, loading: () => ({ destroy() {} }) }),
-    useSettingsStore: () => ({ isModelDirMigrating: false }),
+    useSettingsStore: () => settings,
     useTaskStore: () => ({ runningTasks: [] }),
     window: { __TAURI_INTERNALS__: {} }, navigator: { platform: 'Win32' },
-    getCurrentWindow: () => ({ label: 'editor', async destroy() { calls.push('destroy') }, async close() { calls.push('close') } }),
+    getCurrentWindow: () => ({ label, async hide() { calls.push('hide') }, async destroy() { calls.push('destroy') }, async close() { calls.push('close') } }),
     async invoke(command) { calls.push(command) }, onMounted() {}, onUnmounted() {},
   })
   vm.runInContext(code, context)
   return {
-    calls, prompts, errors,
-    close: () => vm.runInContext('requestClose()', context),
+    calls, prompts, errors, settings,
+    close: (force) => vm.runInContext(`requestClose(${force ? 'true' : ''})`, context),
     choose(text) {
       const action = prompts.at(-1).action().children.find(node => node.children.default() === text)
       assert.ok(action, `Missing close action: ${text}`)
       action.props.onClick()
+    },
+    remember() {
+      const checkbox = prompts.at(-1).action().children.find(node => node.type?.name === 'Checkbox')
+      assert.ok(checkbox, 'Missing dont-ask-again checkbox')
+      checkbox.props['onUpdate:checked'](true)
+      return checkbox
     },
   }
 }
@@ -109,4 +117,44 @@ test('discard waits for plugin release before closing and repeated close clicks 
   release()
   await closing
   assert.deepEqual(env.calls, ['close_current_window'])
+})
+
+test('main window asks minimize or quit and minimize keeps the process alive', async () => {
+  const env = environment({ label: 'main' })
+  const closing = env.close()
+  await flush()
+  assert.equal(env.prompts.length, 1)
+  assert.ok(env.prompts[0].action().children.some(node => node.type?.name === 'Checkbox'))
+  env.choose('settings.closeMinimizeAction')
+  await closing
+  assert.deepEqual(env.calls, ['hide_main_window'])
+  assert.deepEqual(env.errors, [])
+})
+
+test('dont-ask-again persists the chosen close behavior', async () => {
+  const env = environment({ label: 'main' })
+  const closing = env.close()
+  await flush()
+  const checkbox = () => env.prompts.at(-1).action().children.find(node => node.type?.name === 'Checkbox')
+  assert.equal(checkbox().props.checked, false)
+  env.remember()
+  assert.equal(checkbox().props.checked, true)
+  env.choose('settings.closeQuitAction')
+  await closing
+  assert.equal(env.settings.closeBehavior, 'quit')
+  assert.deepEqual(env.calls, ['quit_application'])
+})
+
+test('configured minimize closes straight to tray without prompting', async () => {
+  const env = environment({ label: 'main', closeBehavior: 'minimize' })
+  await env.close()
+  assert.equal(env.prompts.length, 0)
+  assert.deepEqual(env.calls, ['hide_main_window'])
+})
+
+test('tray quit request skips the close behavior prompt', async () => {
+  const env = environment({ label: 'main' })
+  await env.close(true)
+  assert.equal(env.prompts.length, 0)
+  assert.deepEqual(env.calls, ['quit_application'])
 })

@@ -120,7 +120,7 @@ impl Fixture {
             command.args(["-c", "exec sleep 30"]);
             command
         };
-        command.env("PYMSS_STUDIO_DATA_ROOT", "unused-dialog-fixture");
+        command.env("SOUNDFLOW_DATA_ROOT", "unused-dialog-fixture");
         let mut process = HostProcess::spawn_command(command).unwrap();
         let (replies, responses) = mpsc::channel();
         process.responses = responses;
@@ -445,7 +445,7 @@ fn real_plugin_authorization_keeps_its_owned_session_alive() {
     let mut command = Command::new(executable);
     command
         .arg("--audio-host")
-        .env("PYMSS_STUDIO_DATA_ROOT", root.path());
+        .env("SOUNDFLOW_DATA_ROOT", root.path());
     let mut process = HostProcess::spawn_command(command).unwrap();
     let project = json!({"id":"authorization-observation", "name":"Authorization observation", "sources":[], "tracks":[],
         "pluginChain":[{"id":"effect","format":"vst3","pluginId":plugin_id,"name":"Effect","path":PathBuf::from(plugin),"bypassed":false}], "masterVolume":1});

@@ -88,6 +88,12 @@ async function navigateToStep() {
     const destination = popup || (current.value.section ? { path: current.value.route, query: { section: current.value.section } } : current.value.route)
     if (route.fullPath !== router.resolve(destination).fullPath) await router.push(destination)
     await nextTick()
+    if (id === 'lyricsModels' && route.path === '/lyrics') {
+      const tab = [...document.querySelectorAll<HTMLElement>('.lyrics-tabs .n-tabs-tab')]
+        .find(element => element.textContent?.trim() === t('lyrics.tabModels'))
+      tab?.click()
+      await nextTick()
+    }
     document.querySelector<HTMLElement>('.simple-inference-modal .n-card-header__close')?.click()
     if (id === 'workflowEditor') {
       const fit = [...document.querySelectorAll<HTMLButtonElement>('.simple-node-editor__actions button')].find(button => button.textContent?.trim() === t('workflows.fitView'))

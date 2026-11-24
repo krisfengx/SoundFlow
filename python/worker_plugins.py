@@ -1078,7 +1078,7 @@ def _plugin_source_info(draft: object | None = None) -> dict:
             "configPath": str(_PLUGIN_MANIFEST)}
     try:
         config = load_plugin_config(_PLUGIN_MANIFEST)
-        local_default = os.environ.get("PYMSS_STUDIO_PLUGINS_SOURCE")
+        local_default = os.environ.get("SOUNDFLOW_PLUGINS_SOURCE")
         empty = {"localPath": None, "repositoryUrl": None, "ref": None, "registryRef": None}
         info["defaults"] = {**empty, "repositoryUrl": config["repository"]["url"],
                             "ref": config["repository"]["ref"],
@@ -1086,7 +1086,7 @@ def _plugin_source_info(draft: object | None = None) -> dict:
                             "mode": "local" if local_default else "repository", "localPath": local_default}
         source = plugin_source(_PLUGIN_MANIFEST, draft)
         registry_override = os.environ.get("PYMSS_PLUGINS_REGISTRY") if draft is None else None
-        origin = "debug" if draft is not None or os.environ.get("PYMSS_STUDIO_PLUGIN_SOURCE_OVERRIDE") else "environment" if local_default else "manifest"
+        origin = "debug" if draft is not None or os.environ.get("SOUNDFLOW_PLUGIN_SOURCE_OVERRIDE") else "environment" if local_default else "manifest"
         info["effective"] = {**empty, **source, "origin": "registry-environment" if registry_override else origin}
         info["available"] = None
         if registry_override:

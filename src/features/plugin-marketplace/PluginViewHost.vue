@@ -213,7 +213,7 @@ async function handleCall(id: number, method: string, params: Record<string, unk
       const build = await invoke<{ version: string }>('get_build_info')
       const runtime = app.runtimeInfo
       return {
-        studio: 'pymss-studio', version: build.version, locale: String(locale.value),
+        studio: 'soundflow', version: build.version, locale: String(locale.value),
         ...sdkInfo(),
         defaultOutputDir: settings.outputDir, defaultModelDir: settings.modelDir,
         runtimeInfo: runtime ? {

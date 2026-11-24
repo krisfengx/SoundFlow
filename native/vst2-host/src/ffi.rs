@@ -344,11 +344,11 @@ unsafe extern "C" fn callback(
         23 => PROCESS_LEVEL.with(Cell::get),
         24 => 1, // automation off; this host does not claim write automation
         32 => {
-            unsafe { copy_string(data, b"Pymss Studio", 64) };
+            unsafe { copy_string(data, b"SoundFlow", 64) };
             1
         }
         33 => {
-            unsafe { copy_string(data, b"Pymss Studio", 64) };
+            unsafe { copy_string(data, b"SoundFlow", 64) };
             1
         }
         34 => 1,

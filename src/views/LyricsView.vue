@@ -2774,7 +2774,7 @@ function charTitle(w: CharWord) {
 
 <template>
   <div class="page lyrics-page">
-    <div class="page-header-compact">
+    <div class="page-header-compact" data-guide="lyrics-overview">
       <div>
         <h1><n-icon :component="DocumentTextOutline" :size="22" style="margin-right: 8px" />{{ t('lyrics.title') }}</h1>
         <p>{{ t('lyrics.subtitle') }}</p>
@@ -2866,6 +2866,7 @@ function charTitle(w: CharWord) {
 
         <div
           class="field"
+          data-guide="lyrics-source"
           :title="workMode === 'dir' ? `${lyricsSourceDesc}\n${t('lyrics.batchFormatHint')}` : lyricsSourceDesc"
         >
           <label>{{ t('lyrics.source') }}</label>
@@ -3333,7 +3334,7 @@ function charTitle(w: CharWord) {
 
       <!-- 模型管理：仿主界面模型库（大页头 + 筛选工具栏 + 分组列表） -->
       <n-tab-pane name="models" :tab="t('lyrics.tabModels')">
-        <div class="page-header-compact">
+        <div class="page-header-compact" data-guide="lyrics-model-management">
           <div>
             <div class="models-title-row">
               <h1 class="models-tab-title">{{ t('lyrics.l2tTitle') }}</h1>

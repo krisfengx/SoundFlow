@@ -2,7 +2,7 @@
 /**
  * Cross-platform, zero-dependency developer environment helper.
  *
- * Design rule (mirrors upstream pymss-studio): the DEVELOPER entry point is a
+ * Design rule (mirrors upstream soundflow): the DEVELOPER entry point is a
  * platform-neutral `pnpm` command. The only real differences between Windows,
  * macOS and Linux are the venv interpreter path and the system packages needed
  * by Tauri; both are absorbed here instead of in .ps1 / .bat files.
@@ -10,7 +10,7 @@
  * Nothing is downloaded: system Node / Python / Rust are *borrowed*, while every
  * cache / temp / runtime WRITE is pinned inside the checkout (project rule).
  * Environment caches -> <repo>/.venv/cache; caches that can hold model weights
- * (HF_HOME / TORCH_HOME / MODELSCOPE_CACHE) -> <repo>/data/models/_cache.
+ * (HF_HOME / TORCH_HOME / MODELSCOPE_CACHE) -> <repo>/.soundflow/models/_cache.
  *
  * Versions come from setup/toolchain.json (single source of truth, shared with
  * package.json engines / packageManager and the CI workflows).
@@ -90,8 +90,8 @@ function findPinnedPython() {
 }
 /** Resolve the interpreter used by Tauri / Worker, never guessing a platform path. */
 function resolvePython() {
-  const explicit = process.env.PYMSS_STUDIO_PYTHON
-  if (explicit && fs.existsSync(explicit)) return { command: explicit, version: versionOf(explicit), source: 'PYMSS_STUDIO_PYTHON' }
+  const explicit = process.env.SOUNDFLOW_PYTHON
+  if (explicit && fs.existsSync(explicit)) return { command: explicit, version: versionOf(explicit), source: 'SOUNDFLOW_PYTHON' }
   if (fs.existsSync(VENV_PY)) return { command: VENV_PY, version: versionOf(VENV_PY), source: '.venv/bootstrap' }
   if (fs.existsSync(LEGACY_PY)) return { command: LEGACY_PY, version: versionOf(LEGACY_PY), source: '.venv/python/asr (legacy Windows layout)' }
   const sys = firstWorkingPython()
@@ -122,7 +122,7 @@ function pinnedEnv(options = {}) {
   force('PNPM_HOME', cache('pnpm'))
   // Cache layering: environment caches stay in .venv, but HF / torch.hub /
   // ModelScope can materialise weight files, so those belong to the model root.
-  const modelCache = p => path.join(ROOT, 'data', 'models', '_cache', p)
+  const modelCache = p => path.join(ROOT, '.soundflow', 'models', '_cache', p)
   force('HF_HOME', modelCache('hf'))
   force('TORCH_HOME', modelCache('torch'))
   force('XDG_CACHE_HOME', cache('xdg'))
@@ -136,13 +136,15 @@ function pinnedEnv(options = {}) {
   else if (flags.has('--isolated')) force('RUSTUP_HOME', cache('rustup'))
   // Upstream-native interpreter override: respect an explicit choice.
   const py = resolvePython()
-  if (py) set('PYMSS_STUDIO_PYTHON', py.command)
-  // Keep the L2 inference runtimes at the same project-local path on all OSes.
-  force('PYMSS_STUDIO_RUNTIME_ENVS_OVERRIDE', path.join(ENV_ROOT, 'python', 'runtime-envs'))
+  if (py) set('SOUNDFLOW_PYTHON', py.command)
+  // Keep the L2 inference runtimes at the same project-local path on all OSes,
+  // but let an explicit override win: the app can now persist a user-chosen
+  // runtime directory in app-settings (Settings → Data directories).
+  set('SOUNDFLOW_RUNTIME_ENVS_OVERRIDE', path.join(ENV_ROOT, 'python', 'runtime-envs'))
   // Read-only plugin discovery has no equivalent Rust injection. `set` (not
   // force) keeps an explicit portable/CI override; the Python default in
   // python/_project_paths.py already points here when nothing is injected.
-  set('PYMSS_PLUGINS_DIR', path.join(ROOT, 'data', 'plugins'))
+  set('PYMSS_PLUGINS_DIR', path.join(ROOT, '.soundflow', 'plugins'))
   if (CN_NETWORK) {
     set('HF_ENDPOINT', 'https://hf-mirror.com')
     const domains = 'modelscope.cn,.modelscope.cn,modelscope.org,.aliyuncs.com,hf-mirror.com,huggingface.co,.hf.co'
@@ -266,13 +268,13 @@ function bootstrap() {
   }
   fs.mkdirSync(ENV_ROOT, { recursive: true })
   const allowMismatch = flags.has('--allow-mismatch')
-  const requested = opt('--python') || process.env.PYMSS_STUDIO_PYTHON
+  const requested = opt('--python') || process.env.SOUNDFLOW_PYTHON
   const hint = TOOLCHAIN.pythonInstallHints[process.platform] || TOOLCHAIN.pythonInstallHints.linux
   const base = requested || findPinnedPython()?.command
   if (!base) {
     console.error(`  [env] Python ${PY_VERSION} not found. This repo pins ${PY_VERSION} (setup/toolchain.json, CI, upstream).`)
     console.error(`  [env] Install: ${hint}`)
-    console.error('  [env] Or point at an interpreter: pnpm env:bootstrap --python <path>  (and check PYMSS_STUDIO_PYTHON).')
+    console.error('  [env] Or point at an interpreter: pnpm env:bootstrap --python <path>  (and check SOUNDFLOW_PYTHON).')
     console.error('  [env] Legacy Windows 3.13.x setups only: add --allow-mismatch.')
     return 1
   }
@@ -285,7 +287,7 @@ function bootstrap() {
     if (!allowMismatch) {
       console.error(`  [env] ${baseVersion} does not match the pinned Python ${PY_VERSION}.`)
       console.error(`  [env] Install: ${hint}`)
-      console.error(`  [env] If PYMSS_STUDIO_PYTHON or --python points at an old interpreter, unset it or pass --python <${PY_VERSION} path>.`)
+      console.error(`  [env] If SOUNDFLOW_PYTHON or --python points at an old interpreter, unset it or pass --python <${PY_VERSION} path>.`)
       console.error('  [env] Existing non-3.12 setups may opt out once with --allow-mismatch.')
       return 1
     }
@@ -323,7 +325,7 @@ function pythonTestEnv(baseEnv) {
     const state = JSON.parse(fs.readFileSync(
       path.join(ENV_ROOT, 'python', 'runtime-envs', 'active-runtime.json'), 'utf8'))
     if (state.pythonPath && fs.existsSync(state.pythonPath)) {
-      return { ...baseEnv, PYMSS_STUDIO_PYTHON: String(state.pythonPath) }
+      return { ...baseEnv, SOUNDFLOW_PYTHON: String(state.pythonPath) }
     }
   } catch { /* No activated runtime yet: keep the bootstrap interpreter. */ }
   return baseEnv
@@ -332,7 +334,7 @@ function pythonTestEnv(baseEnv) {
 /** Plugin API contract for `env:doctor`. Only meaningful once an inference runtime
  *  has been installed; a fresh bootstrap venv reports SKIP instead of failing. */
 function checkPluginApi(env) {
-  let python = env.PYMSS_STUDIO_PYTHON
+  let python = env.SOUNDFLOW_PYTHON
   try {
     const state = JSON.parse(fs.readFileSync(
       path.join(ENV_ROOT, 'python', 'runtime-envs', 'active-runtime.json'), 'utf8'))
@@ -403,7 +405,7 @@ function setup() {
 // -------------------------------------------------------------------- env
 function printEnv() {
   const env = pinnedEnv()
-  const keys = ['PYMSS_STUDIO_PYTHON', 'PYMSS_STUDIO_RUNTIME_ENVS_OVERRIDE', 'PYMSS_PLUGINS_DIR',
+  const keys = ['SOUNDFLOW_PYTHON', 'SOUNDFLOW_RUNTIME_ENVS_OVERRIDE', 'PYMSS_PLUGINS_DIR',
     'PIP_CACHE_DIR', 'CARGO_HOME', 'RUSTUP_HOME', 'npm_config_cache', 'PNPM_HOME', 'HF_HOME', 'TORCH_HOME',
     'XDG_CACHE_HOME', 'MODELSCOPE_CACHE', 'HF_ENDPOINT', 'TMP', 'TEMP', 'TMPDIR']
   for (const k of keys) {

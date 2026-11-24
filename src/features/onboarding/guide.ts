@@ -2,7 +2,7 @@ import { PARAMETER_GUIDES, type ParameterGuideId } from './parameters.ts'
 
 export type BeginnerGuideStatus = 'unseen' | 'pending' | 'active' | 'skipped' | 'completed'
 export type BeginnerGuideProgress = { status: BeginnerGuideStatus; step: number; stepId?: string; parameter?: ParameterGuideId }
-export type BeginnerGuideChapter = 'models' | 'separation' | 'results' | 'workflows' | 'tools' | 'settings'
+export type BeginnerGuideChapter = 'models' | 'separation' | 'results' | 'workflows' | 'lyrics' | 'tools' | 'settings'
 type BeginnerGuideStep = {
   id: string
   chapter: BeginnerGuideChapter
@@ -21,7 +21,8 @@ type BeginnerGuideStep = {
 export const BEGINNER_GUIDE_CHAPTERS = {
   models: 'beginnerGuide.chapters.models', separation: 'beginnerGuide.chapters.separation',
   results: 'beginnerGuide.chapters.results', workflows: 'beginnerGuide.chapters.workflows',
-  tools: 'beginnerGuide.chapters.tools', settings: 'beginnerGuide.chapters.settings',
+  lyrics: 'beginnerGuide.chapters.lyrics', tools: 'beginnerGuide.chapters.tools',
+  settings: 'beginnerGuide.chapters.settings',
 } as const
 
 export const BEGINNER_GUIDE_STEPS: readonly BeginnerGuideStep[] = [
@@ -51,6 +52,9 @@ export const BEGINNER_GUIDE_STEPS: readonly BeginnerGuideStep[] = [
   { id: 'workflowOverview', chapter: 'workflows', route: '/workflows', anchor: 'workflow-overview', title: 'beginnerGuide.workflowRunTitle', description: 'beginnerGuide.workflowRunDescription' },
   { id: 'workflowEditor', chapter: 'workflows', route: '/workflows', anchor: 'demo-workflow-editor', title: 'beginnerGuide.workflowEditorTitle', description: 'beginnerGuide.workflowEditorDescription' },
   { id: 'workflowOutput', chapter: 'workflows', route: '/workflows', anchor: 'demo-workflow-output', title: 'beginnerGuide.workflowOutputTitle', description: 'beginnerGuide.workflowOutputDescription' },
+  { id: 'lyricsOverview', chapter: 'lyrics', route: '/lyrics', anchor: 'lyrics-overview', title: 'beginnerGuide.lyricsOverviewTitle', description: 'beginnerGuide.lyricsOverviewDescription' },
+  { id: 'lyricsSources', chapter: 'lyrics', route: '/lyrics', anchor: 'lyrics-source', title: 'beginnerGuide.lyricsSourcesTitle', description: 'beginnerGuide.lyricsSourcesDescription' },
+  { id: 'lyricsModels', chapter: 'lyrics', route: '/lyrics', anchor: 'lyrics-model-management', title: 'beginnerGuide.lyricsModelsTitle', description: 'beginnerGuide.lyricsModelsDescription' },
   { id: 'toolsOverview', chapter: 'tools', route: '/tools', anchor: 'audio-tools', title: 'beginnerGuide.toolsOverviewTitle', description: 'beginnerGuide.toolsOverviewDescription' },
   { id: 'paths', chapter: 'settings', route: '/settings', section: 'paths', anchor: 'settings-paths', title: 'beginnerGuide.pathsTitle', description: 'beginnerGuide.pathsDescription' },
   { id: 'device', chapter: 'settings', route: '/settings', section: 'defaults', anchor: 'settings-device', title: 'beginnerGuide.deviceTitle', description: 'beginnerGuide.deviceDescription' },

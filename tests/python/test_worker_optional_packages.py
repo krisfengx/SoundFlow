@@ -32,8 +32,8 @@ class OptionalRuntimePackageTests(unittest.TestCase):
         self.envs_dir.mkdir(parents=True)
         self.active_file.write_text(json.dumps({"backend": "cuda"}), encoding="utf-8")
         self.environment = mock.patch.dict(os.environ, {
-            "PYMSS_STUDIO_RUNTIME_ENVS_DIR": str(self.envs_dir),
-            "PYMSS_STUDIO_ACTIVE_RUNTIME_FILE": str(self.active_file),
+            "SOUNDFLOW_RUNTIME_ENVS_DIR": str(self.envs_dir),
+            "SOUNDFLOW_ACTIVE_RUNTIME_FILE": str(self.active_file),
         })
         self.environment.start()
         self.addCleanup(self.environment.stop)
@@ -208,7 +208,7 @@ class OptionalRuntimePackageTests(unittest.TestCase):
         bundled.mkdir(parents=True)
         (bundled / "active-runtime.json").write_text(json.dumps({"backend": "mlx"}), encoding="utf-8")
         self.active_file.unlink()
-        with mock.patch.dict(os.environ, {"PYMSS_STUDIO_BUNDLED_RUNTIME_ENVS_DIR": str(bundled)}):
+        with mock.patch.dict(os.environ, {"SOUNDFLOW_BUNDLED_RUNTIME_ENVS_DIR": str(bundled)}):
             before = optional_packages._runtime_context()
             self.active_file.write_text(json.dumps({"backend": "mlx", "overlayPath": "core-overlay"}), encoding="utf-8")
             after = optional_packages._runtime_context()
@@ -224,9 +224,9 @@ class OptionalRuntimePackageTests(unittest.TestCase):
         self.assertEqual(runtime.packages_dir.resolve(), legacy.resolve())
 
     def test_macos_default_component_root_is_outside_the_application(self) -> None:
-        with mock.patch.dict(os.environ, {"PYMSS_STUDIO_DATA_ROOT": str(self.root / "data")}), \
+        with mock.patch.dict(os.environ, {"SOUNDFLOW_DATA_ROOT": str(self.root / "data")}), \
              mock.patch.object(sys, "platform", "darwin"):
-            os.environ.pop("PYMSS_STUDIO_RUNTIME_ENVS_DIR")
+            os.environ.pop("SOUNDFLOW_RUNTIME_ENVS_DIR")
             self.assertEqual(optional_packages._runtime_envs_dir(), self.root / "data/runtime-envs")
 
     def test_install_stages_and_activates_package_without_writing_to_runtime(self) -> None:
@@ -573,7 +573,7 @@ class OfflineOptionalPackageTests(unittest.TestCase):
             "PIP_NO_INDEX": "1", "PIP_FIND_LINKS": wheels.as_uri(), "PIP_CONFIG_FILE": os.devnull,
             "PIP_DISABLE_PIP_VERSION_CHECK": "1", "PIP_CACHE_DIR": str(root / "data/pip-cache"),
             "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1",
-            "PYMSS_STUDIO_RUNTIME_ENVS_DIR": str(envs), "PYMSS_STUDIO_ACTIVE_RUNTIME_FILE": str(active),
+            "SOUNDFLOW_RUNTIME_ENVS_DIR": str(envs), "SOUNDFLOW_ACTIVE_RUNTIME_FILE": str(active),
         })
         subprocess.run([
             str(python), "-m", "pip", "install", "torch==2.7.1", "mlx==0.31.0",

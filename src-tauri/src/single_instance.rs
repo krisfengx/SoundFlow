@@ -100,7 +100,7 @@ pub fn acquire_or_focus() -> Result<Option<InstanceMutex>, String> {
 fn instance_lock_path() -> PathBuf {
     let user_id = unsafe { libc::geteuid() };
     let instance = if cfg!(feature = "vst-lab") { "vstlab" } else { "main" };
-    Path::new("/tmp").join(format!("pymss-studio-{instance}-{user_id}.lock"))
+    Path::new("/tmp").join(format!("soundflow-{instance}-{user_id}.lock"))
 }
 
 #[cfg(unix)]
@@ -133,7 +133,7 @@ mod handoff {
     use std::os::unix::process::CommandExt;
     use std::sync::atomic::{AtomicI32, Ordering};
 
-    const ENV: &str = "PYMSS_STUDIO_INSTANCE_FD";
+    const ENV: &str = "SOUNDFLOW_INSTANCE_FD";
     static LOCK_FD: AtomicI32 = AtomicI32::new(-1);
 
     pub(super) fn remember(guard: &InstanceMutex) {
@@ -286,7 +286,7 @@ mod tests {
     #[test]
     fn unix_lock_excludes_another_instance_until_the_guard_is_dropped() {
         let path = std::env::temp_dir().join(format!(
-            "pymss-studio-single-instance-test-{}",
+            "soundflow-single-instance-test-{}",
             std::process::id(),
         ));
         let first = acquire_lock(&path).unwrap().unwrap();

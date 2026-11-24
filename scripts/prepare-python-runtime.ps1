@@ -142,7 +142,7 @@ function Rewrite-WindowsRuntimeEnvConfigs {
     )
 
     $resolvedEnvsDir = Resolve-Path -LiteralPath $EnvsDir
-    $resolvedRuntimeDir = if ($Template) { "__PYMSS_STUDIO_PYTHON_RUNTIME__" } else { (Resolve-Path -LiteralPath $PythonRuntimeDir).Path }
+    $resolvedRuntimeDir = if ($Template) { "__SOUNDFLOW_PYTHON_RUNTIME__" } else { (Resolve-Path -LiteralPath $PythonRuntimeDir).Path }
     $pythonExe = Join-Path $resolvedRuntimeDir "python.exe"
     if (!$Template -and !(Test-Path -LiteralPath $pythonExe)) {
         throw "python.exe not found at $pythonExe"
@@ -151,7 +151,7 @@ function Rewrite-WindowsRuntimeEnvConfigs {
     Get-ChildItem -LiteralPath $resolvedEnvsDir -Directory | ForEach-Object {
         $cfg = Join-Path $_.FullName "pyvenv.cfg"
         if (Test-Path -LiteralPath $cfg) {
-            $envDir = if ($Template) { "__PYMSS_STUDIO_RUNTIME_ENV__" } else { $_.FullName }
+            $envDir = if ($Template) { "__SOUNDFLOW_RUNTIME_ENV__" } else { $_.FullName }
             $content = @(
                 "home = $resolvedRuntimeDir"
                 "include-system-site-packages = false"

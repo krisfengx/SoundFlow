@@ -42,7 +42,7 @@ def _sidecar_path() -> Path:
     Deliberately beside the registry rather than inside it: ``UserModelEntry.to_dict()`` only
     serialises the fields pymss knows about, so anything extra written there is silently dropped
     on the next registration."""
-    override = os.environ.get("PYMSS_STUDIO_CUSTOM_MODEL_META")
+    override = os.environ.get("SOUNDFLOW_CUSTOM_MODEL_META")
     if override:
         return Path(override)
     registry = os.environ.get("PYMSS_USER_MODELS")

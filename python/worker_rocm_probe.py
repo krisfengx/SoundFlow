@@ -21,6 +21,7 @@ from threading import Event, Thread
 import time
 from typing import Any, Callable
 
+from _project_paths import data_root
 from worker_protocol import _redact_sensitive_text, emit, emit_error
 
 PROBE_VERSION = 1
@@ -130,10 +131,10 @@ def _runtime_context() -> tuple[dict[str, Any], dict[str, str]]:
 
 
 def _report_path() -> Path:
-    configured = os.environ.get("PYMSS_STUDIO_DATA_ROOT")
-    runtime_root = os.environ.get("PYMSS_STUDIO_RUNTIME_ENVS_DIR")
+    configured = os.environ.get("SOUNDFLOW_DATA_ROOT")
+    runtime_root = os.environ.get("SOUNDFLOW_RUNTIME_ENVS_DIR")
     root = (Path(configured).expanduser() if configured else Path(runtime_root).expanduser().parent
-            if runtime_root else Path.home() / ".pymss-studio")
+            if runtime_root else data_root())
     return root / "runtime-diagnostics" / "rocm-gpu-probe.json"
 
 

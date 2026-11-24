@@ -187,7 +187,7 @@ def _model_catalog_path() -> Path:
 
 def _debug_dir() -> Path:
     # Project-local default (see python/_project_paths.py); an explicit
-    # PYMSS_STUDIO_DEBUG_DIR from the Tauri launcher still wins.
+    # SOUNDFLOW_DEBUG_DIR from the Tauri launcher still wins.
     return debug_dir()
 
 

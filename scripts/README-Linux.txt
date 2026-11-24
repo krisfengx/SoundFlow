@@ -9,7 +9,7 @@ ARM Linux is not included in this release.
 
 Python and audio tools are bundled. A system Python installation is not required.
 Desktop integration uses the system xdg-open command (provided by xdg-utils).
-Runtime environments and user data are stored under ~/.pymss-studio by default.
+Runtime environments and user data are stored under ~/.soundflow by default.
 The first runtime installation requires a network connection and additional disk space.
 GPU environments require compatible host drivers and supported hardware. The Linux
 ROCm environment uses PyTorch 2.10 / ROCm 7.1; consult AMD's compatibility tables
@@ -21,7 +21,7 @@ Check for updates in Settings. Releases enabled for automatic updates can be
 downloaded, verified and installed in the application. Keep the AppImage in a
 directory owned and writable by your user. Save your work and close additional
 editor windows before updating. If the new version cannot start, the previous
-AppImage is restored. Settings and runtime environments remain in ~/.pymss-studio.
+AppImage is restored. Settings and runtime environments remain in ~/.soundflow.
 
 For read-only locations or releases requiring manual installation, download the
 new AppImage and replace the previous file after closing the application.

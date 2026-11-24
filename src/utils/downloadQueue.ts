@@ -1,5 +1,5 @@
 /**
- * Scheduling helpers for batch model downloads (adapted from upstream pymss-studio).
+ * Scheduling helpers for batch model downloads (adapted from upstream soundflow).
  *
  * Each download runs in its own worker process. Starting dozens at once would compete
  * for bandwidth and disk and make every individual download slower, so a batch is
